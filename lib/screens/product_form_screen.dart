@@ -231,6 +231,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.of(context).size;
+    final bool isSmallScreen = screenSize.width < 360;
+    final double imageSize = isSmallScreen ? 120 : 150;
+    
     // Success overlay
     if (_showSuccess) {
       return Scaffold(
@@ -282,173 +286,173 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
             )
           : GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Product Image
-                              Center(
-                                child: GestureDetector(
-                                  onTap: _isUploading ? null : _showImagePickerModal,
-                                  child: Container(
-                                    width: 150,
-                                    height: 150,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200],
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.grey[300]!),
-                                      image: _selectedImagePath != null
-                                          ? DecorationImage(
-                                              image: FileImage(File(_selectedImagePath!)),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : null,
-                                    ),
-                                    child: _isUploading
-                                        ? const Center(
-                                            child: CircularProgressIndicator(),
-                                          )
-                                        : _selectedImagePath == null
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Product Image
+                                  Center(
+                                    child: GestureDetector(
+                                      onTap: _isUploading ? null : _showImagePickerModal,
+                                      child: Container(
+                                        width: imageSize,
+                                        height: imageSize,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.grey[300]!),
+                                          image: _selectedImagePath != null
+                                              ? DecorationImage(
+                                                  image: FileImage(File(_selectedImagePath!)),
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : null,
+                                        ),
+                                        child: _isUploading
                                             ? const Center(
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.add_a_photo,
-                                                      size: 40,
-                                                      color: Colors.grey,
-                                                    ),
-                                                    SizedBox(height: 8),
-                                                    Text(
-                                                      'Tambah Gambar',
-                                                      style: TextStyle(color: Colors.grey),
-                                                    ),
-                                                  ],
-                                                ),
+                                                child: CircularProgressIndicator(),
                                               )
-                                            : null,
+                                            : _selectedImagePath == null
+                                                ? Center(
+                                                    child: Column(
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      children: [
+                                                        Icon(
+                                                          Icons.add_a_photo,
+                                                          size: isSmallScreen ? 32 : 40,
+                                                          color: Colors.grey,
+                                                        ),
+                                                        const SizedBox(height: 8),
+                                                        Text(
+                                                          'Tambah Gambar',
+                                                          style: TextStyle(
+                                                            color: Colors.grey,
+                                                            fontSize: isSmallScreen ? 12 : 14,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )
+                                                : null,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              
-                              // Name Field
-                              TextFormField(
-                                controller: _nameController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Nama Barang',
-                                  prefixIcon: Icon(Icons.inventory),
-                                ),
-                                textCapitalization: TextCapitalization.words,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Mohon masukkan nama barang';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Price Field
-                              TextFormField(
-                                controller: _priceController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Harga',
-                                  prefixIcon: Icon(Icons.attach_money),
-                                  prefixText: 'Rp ',
-                                ),
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                                  SizedBox(height: isSmallScreen ? 16 : 24),
+                                  
+                                  // Name Field
+                                  TextFormField(
+                                    controller: _nameController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Nama Barang',
+                                      prefixIcon: Icon(Icons.inventory),
+                                    ),
+                                    textCapitalization: TextCapitalization.words,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Mohon masukkan nama barang';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+                                  
+                                  // Price Field
+                                  TextFormField(
+                                    controller: _priceController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Harga',
+                                      prefixIcon: Icon(Icons.attach_money),
+                                      prefixText: 'Rp ',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                                    ],
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Mohon masukkan harga barang';
+                                      }
+                                      try {
+                                        final price = double.parse(value);
+                                        if (price <= 0) {
+                                          return 'Harga harus lebih dari 0';
+                                        }
+                                      } catch (e) {
+                                        return 'Format harga tidak valid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+                                  
+                                  // Stock Field
+                                  TextFormField(
+                                    controller: _stockController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Stok',
+                                      prefixIcon: Icon(Icons.inventory_2),
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Mohon masukkan jumlah stok';
+                                      }
+                                      try {
+                                        final stock = int.parse(value);
+                                        if (stock < 0) {
+                                          return 'Stok tidak boleh negatif';
+                                        }
+                                      } catch (e) {
+                                        return 'Format stok tidak valid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 24 : 32),
+                                  
+                                  // Save Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: _saveForm,
+                                      icon: Icon(_isEditing ? Icons.update : Icons.add),
+                                      label: Text(_isEditing ? 'Perbarui Produk' : 'Tambah Produk'),
+                                    ),
+                                  ),
                                 ],
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Mohon masukkan harga barang';
-                                  }
-                                  try {
-                                    final price = double.parse(value);
-                                    if (price <= 0) {
-                                      return 'Harga harus lebih dari 0';
-                                    }
-                                  } catch (e) {
-                                    return 'Format harga tidak valid';
-                                  }
-                                  return null;
-                                },
                               ),
-                              const SizedBox(height: 16),
-                              
-                              // Stock Field
-                              TextFormField(
-                                controller: _stockController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Stok',
-                                  prefixIcon: Icon(Icons.inventory_2),
-                                ),
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                ],
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Mohon masukkan jumlah stok';
-                                  }
-                                  try {
-                                    final stock = int.parse(value);
-                                    if (stock < 0) {
-                                      return 'Stok tidak boleh negatif';
-                                    }
-                                  } catch (e) {
-                                    return 'Format stok tidak valid';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 32),
-                              
-                              // Save Button
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  onPressed: _saveForm,
-                                  icon: Icon(_isEditing ? Icons.update : Icons.add),
-                                  label: Text(_isEditing ? 'Perbarui Produk' : 'Tambah Produk'),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    
-                    // Products List
-                    if (!_isEditing && _products.isNotEmpty) ...[
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Daftar Produk',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: _products.isEmpty
-                          ? const Center(
-                              child: Text('Belum ada produk'),
-                            )
-                          : AnimationLimiter(
+                        
+                        // Products List - Only show if not editing and there are products
+                        if (!_isEditing && _products.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Daftar Produk',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Expanded(
+                            child: AnimationLimiter(
                               child: ListView.builder(
                                 shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
                                 itemCount: _products.length,
                                 itemBuilder: (ctx, i) {
                                   final product = _products[i];
@@ -459,8 +463,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
                                       horizontalOffset: 50.0,
                                       child: FadeInAnimation(
                                         child: Card(
-                                          margin: const EdgeInsets.only(bottom: 12),
+                                          margin: const EdgeInsets.only(bottom: 8),
                                           child: ListTile(
+                                            contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: 12, 
+                                              vertical: 4
+                                            ),
                                             leading: Container(
                                               width: 50,
                                               height: 50,
@@ -478,9 +486,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
                                                   ? const Icon(Icons.inventory, size: 24)
                                                   : null,
                                             ),
-                                            title: Text(product.name),
+                                            title: Text(
+                                              product.name,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                            ),
                                             subtitle: Text(
                                               'Rp ${product.price.toStringAsFixed(0)} · Stok: ${product.stock}',
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                             trailing: Row(
                                               mainAxisSize: MainAxisSize.min,
@@ -488,6 +501,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
                                                 IconButton(
                                                   icon: const Icon(Icons.edit, color: Colors.blue),
                                                   onPressed: () => _prepareEdit(product),
+                                                  visualDensity: VisualDensity.compact,
+                                                  constraints: const BoxConstraints(),
+                                                  padding: const EdgeInsets.all(8),
                                                 ),
                                                 IconButton(
                                                   icon: const Icon(Icons.delete, color: Colors.red),
@@ -509,6 +525,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
                                                       );
                                                     }
                                                   },
+                                                  visualDensity: VisualDensity.compact,
+                                                  constraints: const BoxConstraints(),
+                                                  padding: const EdgeInsets.all(8),
                                                 ),
                                               ],
                                             ),
@@ -520,10 +539,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
                                 },
                               ),
                             ),
-                      ),
-                    ],
-                  ],
-                ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }
               ),
             ),
     );
