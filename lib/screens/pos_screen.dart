@@ -185,7 +185,7 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
       appBar: AppBar(
         title: const Text('Kasir'),
       ),
-      floatingActionButton: Stack(
+      floatingActionButton: cartProvider.items.isNotEmpty ? null : Stack(
         children: [
           FloatingActionButton.extended(
             onPressed: _navigateToProductList,
