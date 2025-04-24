@@ -6,6 +6,7 @@ import 'providers/page_controller_provider.dart';
 import 'screens/product_form_screen.dart';
 import 'screens/pos_screen.dart';
 import 'screens/transaction_history_screen.dart';
+import 'screens/product_list_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -97,6 +98,7 @@ class _HomePageState extends State<HomePage> {
     const POSScreen(),
     const ProductFormScreen(),
     const TransactionHistoryScreen(),
+    const ProductListScreen(),
   ];
 
   @override
@@ -141,6 +143,10 @@ class _HomePageState extends State<HomePage> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.history),
                 label: 'Riwayat',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.grid_view),
+                label: 'Daftar Barang',
               ),
             ],
             currentIndex: pageProvider.currentIndex,
