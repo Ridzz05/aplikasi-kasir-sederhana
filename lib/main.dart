@@ -100,67 +100,350 @@ class _HomePageState extends State<HomePage> {
     const TransactionHistoryScreen(),
     const ProductListScreen(),
   ];
+  
+  bool _isDrawerFixed = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     final pageProvider = Provider.of<PageControllerProvider>(context);
     
-    return Scaffold(
-      body: PageView(
-        controller: pageProvider.pageController,
-        children: _screens,
-        onPageChanged: (index) {
-          pageProvider.setPage(index);
-        },
-        physics: const NeverScrollableScrollPhysics(),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
+    if (_isDrawerFixed) {
+      // Layout dengan drawer permanen
+      return Scaffold(
+        body: Row(
+          children: [
+            // Drawer permanen
+            SizedBox(
+              width: 280, // Fixed drawer width
+              child: Drawer(
+                elevation: 0,
+                child: _buildDrawerContent(context, pageProvider),
+              ),
+            ),
+            // Konten
+            Expanded(
+              child: Scaffold(
+                appBar: AppBar(
+                  title: Text(_getTitleForPage(pageProvider.currentIndex)),
+                  actions: _getActionsForPage(pageProvider.currentIndex),
+                ),
+                body: PageView(
+                  controller: pageProvider.pageController,
+                  children: _screens,
+                  onPageChanged: (index) {
+                    pageProvider.setPage(index);
+                  },
+                  physics: const NeverScrollableScrollPhysics(),
+                ),
+              ),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+      );
+    } else {
+      // Layout dengan drawer collapsible
+      return Scaffold(
+        key: _scaffoldKey,
+        drawer: Drawer(
+          child: _buildDrawerContent(context, pageProvider),
+        ),
+        appBar: AppBar(
+          title: Text(_getTitleForPage(pageProvider.currentIndex)),
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                _scaffoldKey.currentState?.openDrawer();
+              },
+            ),
           ),
-          child: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                icon: Icon(Icons.point_of_sale),
-                label: 'Kasir',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.add_box),
-                label: 'Tambah Barang',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.history),
-                label: 'Riwayat',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.grid_view),
-                label: 'Daftar Barang',
-              ),
-            ],
-            currentIndex: pageProvider.currentIndex,
-            selectedItemColor: const Color(0xFF6C5CE7),
-            unselectedItemColor: Colors.grey[400],
-            showUnselectedLabels: true,
-            type: BottomNavigationBarType.fixed,
-            elevation: 0,
-            onTap: (index) {
-              pageProvider.jumpToPage(index);
+          actions: _getActionsForPage(pageProvider.currentIndex),
+        ),
+        body: PageView(
+          controller: pageProvider.pageController,
+          children: _screens,
+          onPageChanged: (index) {
+            pageProvider.setPage(index);
+          },
+          physics: const NeverScrollableScrollPhysics(),
+        ),
+      );
+    }
+  }
+
+  String _getTitleForPage(int index) {
+    switch (index) {
+      case 0: return 'Kasir';
+      case 1: return 'Tambah Barang';
+      case 2: return 'Riwayat Transaksi';
+      case 3: return 'Daftar Barang';
+      default: return 'Aplikasi Kasir';
+    }
+  }
+  
+  List<Widget>? _getActionsForPage(int index) {
+    final pageProvider = Provider.of<PageControllerProvider>(context, listen: false);
+    
+    switch (index) {
+      case 0: // Kasir screen
+        return null;
+        
+      case 1: // Product Form screen
+        final isEditing = false; // This would need to be maintained somewhere
+        return isEditing 
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    // Reset product form
+                  },
+                ),
+              ]
+            : null;
+            
+      case 2: // Transaction History screen
+        final bool showChart = false; // This would need to be maintained somewhere
+        return [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Refresh transactions
             },
           ),
+          IconButton(
+            icon: Icon(showChart ? Icons.list : Icons.bar_chart),
+            onPressed: () {
+              // Toggle chart view
+            },
+          ),
+        ];
+        
+      case 3: // Product List screen
+        final cartProvider = Provider.of<CartProvider>(context, listen: false);
+        return [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Refresh products
+            },
+          ),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart),
+                onPressed: () {
+                  // Navigate to cart
+                  pageProvider.jumpToPage(0); // Index 0 is POS/Kasir screen
+                },
+                tooltip: 'Lihat Keranjang',
+              ),
+              if (cartProvider.itemCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${cartProvider.itemCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ];
+        
+      default:
+        return null;
+    }
+  }
+  
+  Widget _buildDrawerContent(BuildContext context, PageControllerProvider pageProvider) {
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        DrawerHeader(
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).primaryColor,
+                Theme.of(context).primaryColor.withOpacity(0.7),
+                Theme.of(context).colorScheme.secondary,
+              ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.point_of_sale,
+                      color: Theme.of(context).primaryColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Aplikasi Kasir',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black45,
+                                blurRadius: 2,
+                                offset: Offset(1, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Menu Navigasi',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 14,
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black45,
+                                blurRadius: 2,
+                                offset: Offset(1, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
+        ListTile(
+          selected: pageProvider.currentIndex == 0,
+          selectedTileColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          leading: const Icon(Icons.point_of_sale),
+          title: const Text('Kasir'),
+          onTap: () {
+            pageProvider.jumpToPage(0);
+            if (!_isDrawerFixed) {
+              Navigator.pop(context);
+            }
+          },
+        ),
+        ListTile(
+          selected: pageProvider.currentIndex == 1,
+          selectedTileColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          leading: const Icon(Icons.add_box),
+          title: const Text('Tambah Barang'),
+          onTap: () {
+            pageProvider.jumpToPage(1);
+            if (!_isDrawerFixed) {
+              Navigator.pop(context);
+            }
+          },
+        ),
+        ListTile(
+          selected: pageProvider.currentIndex == 2,
+          selectedTileColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          leading: const Icon(Icons.history),
+          title: const Text('Riwayat Transaksi'),
+          onTap: () {
+            pageProvider.jumpToPage(2);
+            if (!_isDrawerFixed) {
+              Navigator.pop(context);
+            }
+          },
+        ),
+        ListTile(
+          selected: pageProvider.currentIndex == 3,
+          selectedTileColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          leading: const Icon(Icons.grid_view),
+          title: const Text('Daftar Barang'),
+          onTap: () {
+            pageProvider.jumpToPage(3);
+            if (!_isDrawerFixed) {
+              Navigator.pop(context);
+            }
+          },
+        ),
+        const Divider(),
+        SwitchListTile(
+          title: const Text('Mode Sidebar Tetap'),
+          subtitle: const Text('Tampilkan sidebar secara permanen'),
+          secondary: const Icon(Icons.dock),
+          value: _isDrawerFixed,
+          onChanged: (value) {
+            setState(() {
+              _isDrawerFixed = value;
+            });
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.settings),
+          title: const Text('Pengaturan'),
+          onTap: () {
+            if (!_isDrawerFixed) {
+              Navigator.pop(context);
+            }
+            // Show settings dialog
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Fitur pengaturan akan segera tersedia'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.info),
+          title: const Text('Tentang Aplikasi'),
+          onTap: () {
+            if (!_isDrawerFixed) {
+              Navigator.pop(context);
+            }
+            // Show about dialog
+            showAboutDialog(
+              context: context, 
+              applicationName: 'Aplikasi Kasir',
+              applicationVersion: '1.0.0',
+              applicationIcon: const Icon(Icons.point_of_sale, size: 48),
+              children: [
+                const Text('Aplikasi point of sale sederhana untuk kebutuhan usaha kecil.'),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 }

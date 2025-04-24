@@ -182,9 +182,6 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
     }
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kasir'),
-      ),
       floatingActionButton: cartProvider.items.isNotEmpty ? null : Stack(
         children: [
           FloatingActionButton.extended(

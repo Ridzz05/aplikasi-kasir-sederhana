@@ -279,23 +279,6 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     final bool isSmallScreen = screenSize.width < 360;
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Riwayat Transaksi'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchTransactions,
-          ),
-          IconButton(
-            icon: Icon(_showChart ? Icons.list : Icons.bar_chart),
-            onPressed: () {
-              setState(() {
-                _showChart = !_showChart;
-              });
-            },
-          ),
-        ],
-      ),
       body: _isLoading
           ? Center(
               child: Lottie.asset(

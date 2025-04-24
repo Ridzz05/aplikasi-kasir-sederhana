@@ -124,50 +124,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final cartProvider = Provider.of<CartProvider>(context);
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daftar Barang'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchProducts,
-          ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.shopping_cart),
-                onPressed: _navigateToCart,
-                tooltip: 'Lihat Keranjang',
-              ),
-              if (cartProvider.itemCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      '${cartProvider.itemCount}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddProduct,
         child: const Icon(Icons.add),

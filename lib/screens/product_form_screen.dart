@@ -266,16 +266,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Produk' : 'Tambah Produk'),
-        actions: [
-          if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _resetForm,
-            ),
-        ],
-      ),
       body: _isLoading
           ? Center(
               child: Lottie.asset(
