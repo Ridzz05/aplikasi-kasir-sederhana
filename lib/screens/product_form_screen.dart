@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../database/database_helper.dart';
 import '../models/product.dart';
 import '../utils/image_helper.dart';
+import '../widgets/custom_notification.dart';
 
 class ProductFormScreen extends StatefulWidget {
   const ProductFormScreen({Key? key}) : super(key: key);
@@ -24,7 +25,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
   
   late AnimationController _animationController;
   bool _isLoading = false;
-  bool _showSuccess = false;
   List<Product> _products = [];
   
   Product? _editingProduct;
@@ -83,12 +83,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.red[700],
-      ),
+    showCustomNotification(
+      context: context, 
+      message: message,
+      type: NotificationType.error,
     );
   }
 
@@ -195,6 +193,16 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
           imageUrl: _selectedImagePath,
         );
         await DatabaseHelper.instance.updateProduct(updatedProduct);
+        
+        setState(() {
+          _isLoading = false;
+        });
+        
+        showCustomNotification(
+          context: context,
+          message: 'Produk ${updatedProduct.name} berhasil diperbarui',
+          type: NotificationType.success,
+        );
       } else {
         // Create new product
         final product = Product(
@@ -204,20 +212,19 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
           imageUrl: _selectedImagePath,
         );
         await DatabaseHelper.instance.insertProduct(product);
+        
+        setState(() {
+          _isLoading = false;
+        });
+        
+        showCustomNotification(
+          context: context,
+          message: 'Produk ${product.name} berhasil ditambahkan',
+          type: NotificationType.success,
+        );
       }
       
-      // Show success animation
-      setState(() {
-        _isLoading = false;
-        _showSuccess = true;
-      });
-      
       _resetForm();
-      await Future.delayed(const Duration(seconds: 2));
-      
-      setState(() {
-        _showSuccess = false;
-      });
       
       // Refresh product list
       _fetchProducts();
@@ -235,36 +242,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
     final bool isSmallScreen = screenSize.width < 360;
     final double imageSize = isSmallScreen ? 120 : 150;
     
-    // Success overlay
-    if (_showSuccess) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.asset(
-                'assets/animations/success.json',
-                width: 200,
-                height: 200,
-                repeat: false,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                _isEditing ? 'Produk Berhasil Diperbarui!' : 'Produk Berhasil Ditambahkan!',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ).animate().fade().slideY(
-                begin: 0.5,
-                curve: Curves.easeOutBack,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       body: _isLoading
           ? Center(
@@ -507,11 +484,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
                                                     _fetchProducts();
                                                     
                                                     if (context.mounted) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text('${product.name} telah dihapus'),
-                                                          behavior: SnackBarBehavior.floating,
-                                                        ),
+                                                      showCustomNotification(
+                                                        context: context,
+                                                        message: '${product.name} telah dihapus',
+                                                        type: NotificationType.success,
                                                       );
                                                     }
                                                   },

@@ -12,6 +12,7 @@ import '../models/transaction.dart' as app_transaction;
 import '../models/transaction_item.dart';
 import '../providers/cart_provider.dart';
 import '../providers/page_controller_provider.dart';
+import '../widgets/custom_notification.dart';
 
 class POSScreen extends StatefulWidget {
   const POSScreen({Key? key}) : super(key: key);
@@ -29,7 +30,6 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
   
   late AnimationController _animationController;
   bool _isLoading = false;
-  bool _showSuccess = false;
   
   @override
   void initState() {
@@ -50,11 +50,10 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     
     if (cartProvider.items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Keranjang kosong'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showCustomNotification(
+        context: context,
+        message: 'Keranjang belanja masih kosong',
+        type: NotificationType.warning,
       );
       return;
     }
@@ -72,11 +71,10 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
     }
 
     if (!sufficientStock) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Stok ${insufficientStockItem} tidak mencukupi'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showCustomNotification(
+        context: context,
+        message: 'Stok ${insufficientStockItem} tidak mencukupi',
+        type: NotificationType.error,
       );
       return;
     }
@@ -114,28 +112,28 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
       // Clear cart
       cartProvider.clear();
       
-      // Show success animation
       setState(() {
         _isLoading = false;
-        _showSuccess = true;
       });
       
-      await Future.delayed(const Duration(seconds: 2));
-      
-      setState(() {
-        _showSuccess = false;
-      });
+      // Show success notification
+      showCustomNotification(
+        context: context,
+        message: 'Transaksi berhasil disimpan',
+        type: NotificationType.success,
+        duration: const Duration(seconds: 4),
+      );
 
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
       setState(() {
         _isLoading = false;
       });
+      
+      showCustomNotification(
+        context: context,
+        message: 'Error: ${e.toString()}',
+        type: NotificationType.error,
+      );
     }
   }
 
@@ -151,43 +149,25 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 360;
     
-    // Success overlay
-    if (_showSuccess) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.asset(
-                'assets/animations/success.json',
-                width: 200,
-                height: 200,
-                repeat: false,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Transaksi Berhasil!',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ).animate().fade().slideY(
-                begin: 0.5,
-                curve: Curves.easeOutBack,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    
     return Scaffold(
       floatingActionButton: cartProvider.items.isNotEmpty ? null : Stack(
         children: [
           FloatingActionButton.extended(
             onPressed: _navigateToProductList,
+            backgroundColor: const Color(0xFF64B5F6), // Biru muda
+            foregroundColor: Colors.white,
+            elevation: 4,
             icon: const Icon(Icons.grid_view),
-            label: const Text('Lihat Barang'),
+            label: const Text(
+              'Lihat Barang',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           if (cartProvider.itemCount > 0)
             Positioned(
@@ -196,18 +176,25 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
-                  color: Colors.red,
+                  color: Color(0xFFFF9800), // Oranye
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 3,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
                 constraints: const BoxConstraints(
-                  minWidth: 20,
-                  minHeight: 20,
+                  minWidth: 22,
+                  minHeight: 22,
                 ),
                 child: Text(
                   '${cartProvider.itemCount}',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,

@@ -7,6 +7,7 @@ import 'screens/product_form_screen.dart';
 import 'screens/pos_screen.dart';
 import 'screens/transaction_history_screen.dart';
 import 'screens/product_list_screen.dart';
+import 'widgets/custom_notification.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,17 +26,19 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Aplikasi Kasir',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
+      theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6C5CE7),
+            seedColor: const Color(0xFF64B5F6),
+            primary: const Color(0xFF64B5F6),
+            secondary: const Color(0xFFFF9800),
             brightness: Brightness.light,
           ),
           scaffoldBackgroundColor: Colors.grey[50],
           textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C5CE7),
+              backgroundColor: const Color(0xFF64B5F6),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -51,7 +54,7 @@ class MyApp extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
           ),
           appBarTheme: AppBarTheme(
-            backgroundColor: const Color(0xFF6C5CE7),
+            backgroundColor: const Color(0xFF64B5F6),
             foregroundColor: Colors.white,
             elevation: 0,
             centerTitle: true,
@@ -110,7 +113,7 @@ class _HomePageState extends State<HomePage> {
     
     if (_isDrawerFixed) {
       // Layout dengan drawer permanen
-      return Scaffold(
+    return Scaffold(
         body: Row(
           children: [
             // Drawer permanen
@@ -124,7 +127,7 @@ class _HomePageState extends State<HomePage> {
             // Konten
             Expanded(
               child: Scaffold(
-                appBar: AppBar(
+      appBar: AppBar(
                   title: Text(_getTitleForPage(pageProvider.currentIndex)),
                   actions: _getActionsForPage(pageProvider.currentIndex),
                 ),
@@ -284,9 +287,9 @@ class _HomePageState extends State<HomePage> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Theme.of(context).primaryColor,
-                Theme.of(context).primaryColor.withOpacity(0.7),
-                Theme.of(context).colorScheme.secondary,
+                const Color(0xFF64B5F6), // Biru muda
+                const Color(0xFF42A5F5).withOpacity(0.8), // Biru muda sedikit lebih gelap
+                const Color(0xFFFF9800), // Oranye
               ],
             ),
           ),
@@ -301,7 +304,7 @@ class _HomePageState extends State<HomePage> {
                     backgroundColor: Colors.white,
                     child: Icon(
                       Icons.point_of_sale,
-                      color: Theme.of(context).primaryColor,
+                      color: const Color(0xFF64B5F6), // Biru muda
                       size: 24,
                     ),
                   ),
@@ -350,8 +353,8 @@ class _HomePageState extends State<HomePage> {
         ),
         ListTile(
           selected: pageProvider.currentIndex == 0,
-          selectedTileColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          leading: const Icon(Icons.point_of_sale),
+          selectedTileColor: const Color(0xFF64B5F6).withOpacity(0.1),
+          leading: const Icon(Icons.point_of_sale, color: Color(0xFF64B5F6)),
           title: const Text('Kasir'),
           onTap: () {
             pageProvider.jumpToPage(0);
@@ -362,8 +365,8 @@ class _HomePageState extends State<HomePage> {
         ),
         ListTile(
           selected: pageProvider.currentIndex == 1,
-          selectedTileColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          leading: const Icon(Icons.add_box),
+          selectedTileColor: const Color(0xFF64B5F6).withOpacity(0.1),
+          leading: const Icon(Icons.add_box, color: Color(0xFF64B5F6)),
           title: const Text('Tambah Barang'),
           onTap: () {
             pageProvider.jumpToPage(1);
@@ -374,8 +377,8 @@ class _HomePageState extends State<HomePage> {
         ),
         ListTile(
           selected: pageProvider.currentIndex == 2,
-          selectedTileColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          leading: const Icon(Icons.history),
+          selectedTileColor: const Color(0xFF64B5F6).withOpacity(0.1),
+          leading: const Icon(Icons.history, color: Color(0xFF64B5F6)),
           title: const Text('Riwayat Transaksi'),
           onTap: () {
             pageProvider.jumpToPage(2);
@@ -386,8 +389,8 @@ class _HomePageState extends State<HomePage> {
         ),
         ListTile(
           selected: pageProvider.currentIndex == 3,
-          selectedTileColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          leading: const Icon(Icons.grid_view),
+          selectedTileColor: const Color(0xFF64B5F6).withOpacity(0.1),
+          leading: const Icon(Icons.grid_view, color: Color(0xFF64B5F6)),
           title: const Text('Daftar Barang'),
           onTap: () {
             pageProvider.jumpToPage(3);
@@ -400,8 +403,9 @@ class _HomePageState extends State<HomePage> {
         SwitchListTile(
           title: const Text('Mode Sidebar Tetap'),
           subtitle: const Text('Tampilkan sidebar secara permanen'),
-          secondary: const Icon(Icons.dock),
+          secondary: const Icon(Icons.dock, color: Color(0xFF64B5F6)),
           value: _isDrawerFixed,
+          activeColor: const Color(0xFFFF9800), // Oranye
           onChanged: (value) {
             setState(() {
               _isDrawerFixed = value;
@@ -409,23 +413,22 @@ class _HomePageState extends State<HomePage> {
           },
         ),
         ListTile(
-          leading: const Icon(Icons.settings),
+          leading: const Icon(Icons.settings, color: Color(0xFF64B5F6)),
           title: const Text('Pengaturan'),
           onTap: () {
             if (!_isDrawerFixed) {
               Navigator.pop(context);
             }
             // Show settings dialog
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Fitur pengaturan akan segera tersedia'),
-                behavior: SnackBarBehavior.floating,
-              ),
+            showCustomNotification(
+              context: context,
+              message: 'Fitur pengaturan akan segera tersedia',
+              type: NotificationType.info,
             );
           },
         ),
         ListTile(
-          leading: const Icon(Icons.info),
+          leading: const Icon(Icons.info, color: Color(0xFF64B5F6)),
           title: const Text('Tentang Aplikasi'),
           onTap: () {
             if (!_isDrawerFixed) {
@@ -436,7 +439,7 @@ class _HomePageState extends State<HomePage> {
               context: context, 
               applicationName: 'Aplikasi Kasir',
               applicationVersion: '1.0.0',
-              applicationIcon: const Icon(Icons.point_of_sale, size: 48),
+              applicationIcon: const Icon(Icons.point_of_sale, size: 48, color: Color(0xFF64B5F6)),
               children: [
                 const Text('Aplikasi point of sale sederhana untuk kebutuhan usaha kecil.'),
               ],

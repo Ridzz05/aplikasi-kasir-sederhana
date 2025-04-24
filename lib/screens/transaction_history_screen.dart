@@ -7,6 +7,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../database/database_helper.dart';
 import '../models/transaction.dart' as app_transaction;
 import '../models/transaction_item.dart';
+import '../widgets/custom_notification.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({Key? key}) : super(key: key);
@@ -54,11 +55,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         _totalRevenue = transactions.fold(0, (sum, tx) => sum + tx.totalAmount);
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showCustomNotification(
+        context: context,
+        message: 'Gagal memuat riwayat: ${e.toString()}',
+        type: NotificationType.error,
       );
     } finally {
       setState(() {
@@ -79,11 +79,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         _transactionItems = items;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showCustomNotification(
+        context: context,
+        message: 'Gagal memuat detail: ${e.toString()}',
+        type: NotificationType.error,
       );
     } finally {
       setState(() {

@@ -8,6 +8,7 @@ import '../database/database_helper.dart';
 import '../models/product.dart';
 import '../providers/page_controller_provider.dart';
 import '../providers/cart_provider.dart';
+import '../widgets/custom_notification.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({Key? key}) : super(key: key);
@@ -91,11 +92,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   void _addToCart(Product product) {
     if (product.stock <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Stok kosong'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showCustomNotification(
+        context: context,
+        message: 'Stok produk ${product.name} kosong',
+        type: NotificationType.warning,
       );
       return;
     }
@@ -103,17 +103,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     cartProvider.addItem(product);
     
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} ditambahkan ke keranjang'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        action: SnackBarAction(
-          label: 'Lihat Keranjang',
-          onPressed: _navigateToCart,
-        ),
-      ),
+    showCustomNotification(
+      context: context,
+      message: '${product.name} ditambahkan ke keranjang',
+      type: NotificationType.success,
+      onAction: _navigateToCart,
+      actionLabel: 'Lihat Keranjang',
+      duration: const Duration(seconds: 3),
     );
   }
 
@@ -124,11 +120,79 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final cartProvider = Provider.of<CartProvider>(context);
     
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToAddProduct,
-        child: const Icon(Icons.add),
-        tooltip: 'Tambah Barang',
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (cartProvider.itemCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: FloatingActionButton.extended(
+                onPressed: _navigateToCart,
+                backgroundColor: const Color(0xFF64B5F6),
+                foregroundColor: Colors.white,
+                elevation: 4,
+                heroTag: 'back_to_cart',
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.shopping_cart),
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF9800),
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '${cartProvider.itemCount}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                label: const Text(
+                  'Lihat Keranjang',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          FloatingActionButton(
+            onPressed: _navigateToAddProduct,
+            backgroundColor: const Color(0xFFFF9800), // Oranye
+            foregroundColor: Colors.white,
+            elevation: 4,
+            heroTag: 'add_product',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.add,
+              size: 28,
+            ),
+            tooltip: 'Tambah Barang',
+          ),
+        ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: _isLoading
           ? Center(
               child: Lottie.asset(
