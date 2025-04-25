@@ -10,10 +10,13 @@ import '../models/transaction_item.dart';
 import '../widgets/custom_notification.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
-  const TransactionHistoryScreen({super.key});
+  final Function(int)? onScreenChange;
+  const TransactionHistoryScreen({Key? key, this.onScreenChange})
+    : super(key: key);
 
   @override
-  _TransactionHistoryScreenState createState() => _TransactionHistoryScreenState();
+  _TransactionHistoryScreenState createState() =>
+      _TransactionHistoryScreenState();
 }
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
@@ -23,7 +26,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     decimalDigits: 0,
   );
   final dateFormatter = DateFormat('dd MMM yyyy, HH:mm');
-  
+
   bool _isLoading = false;
   List<app_transaction.Transaction> _transactions = [];
   app_transaction.Transaction? _selectedTransaction;
@@ -49,7 +52,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         _transactions = transactions;
         _selectedTransaction = null;
         _transactionItems = [];
-        
+
         // Calculate statistics
         _totalTransactions = transactions.length;
         _totalRevenue = transactions.fold(0, (sum, tx) => sum + tx.totalAmount);
@@ -67,14 +70,18 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     }
   }
 
-  Future<void> _fetchTransactionItems(app_transaction.Transaction transaction) async {
+  Future<void> _fetchTransactionItems(
+    app_transaction.Transaction transaction,
+  ) async {
     setState(() {
       _isLoading = true;
       _selectedTransaction = transaction;
     });
 
     try {
-      final items = await DatabaseHelper.instance.getTransactionItems(transaction.id!);
+      final items = await DatabaseHelper.instance.getTransactionItems(
+        transaction.id!,
+      );
       setState(() {
         _transactionItems = items;
       });
@@ -93,10 +100,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 
   void _showTransactionDetailsModal(BuildContext context) {
     if (_selectedTransaction == null) return;
-    
+
     final Size screenSize = MediaQuery.of(context).size;
     final bool isSmallScreen = screenSize.width < 360;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -138,7 +145,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               Text(
                 'Tanggal: ${dateFormatter.format(_selectedTransaction!.date)}',
                 style: TextStyle(
-                  color: Colors.grey[600], 
+                  color: Colors.grey[600],
                   fontSize: isSmallScreen ? 13 : 15,
                 ),
               ),
@@ -150,7 +157,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   Text(
                     'Detail Item:',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold, 
+                      fontWeight: FontWeight.bold,
                       fontSize: isSmallScreen ? 14 : 16,
                       color: Theme.of(context).primaryColor,
                     ),
@@ -159,79 +166,92 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: _transactionItems.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey[400]),
-                            const SizedBox(height: 16),
-                            const Text('Tidak ada item'),
-                          ],
-                        ),
-                      )
-                    : AnimationLimiter(
-                        child: ListView.builder(
-                          itemCount: _transactionItems.length,
-                          itemBuilder: (ctx, i) {
-                            final item = _transactionItems[i];
-                            return AnimationConfiguration.staggeredList(
-                              position: i,
-                              duration: const Duration(milliseconds: 375),
-                              child: SlideAnimation(
-                                verticalOffset: 50.0,
-                                child: FadeInAnimation(
-                                  child: Card(
-                                    margin: const EdgeInsets.symmetric(vertical: 4),
-                                    child: ListTile(
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: isSmallScreen ? 8 : 16,
+                child:
+                    _transactionItems.isEmpty
+                        ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.inventory_2_outlined,
+                                size: 48,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              const Text('Tidak ada item'),
+                            ],
+                          ),
+                        )
+                        : AnimationLimiter(
+                          child: ListView.builder(
+                            itemCount: _transactionItems.length,
+                            itemBuilder: (ctx, i) {
+                              final item = _transactionItems[i];
+                              return AnimationConfiguration.staggeredList(
+                                position: i,
+                                duration: const Duration(milliseconds: 375),
+                                child: SlideAnimation(
+                                  verticalOffset: 50.0,
+                                  child: FadeInAnimation(
+                                    child: Card(
+                                      margin: const EdgeInsets.symmetric(
                                         vertical: 4,
                                       ),
-                                      leading: CircleAvatar(
-                                        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                                        radius: isSmallScreen ? 16 : 20,
-                                        child: Text(
-                                          "${item.quantity}",
-                                          style: TextStyle(
-                                            color: Theme.of(context).primaryColor,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: isSmallScreen ? 12 : 14,
+                                      child: ListTile(
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: isSmallScreen ? 8 : 16,
+                                          vertical: 4,
+                                        ),
+                                        leading: CircleAvatar(
+                                          backgroundColor: Theme.of(
+                                            context,
+                                          ).primaryColor.withOpacity(0.1),
+                                          radius: isSmallScreen ? 16 : 20,
+                                          child: Text(
+                                            "${item.quantity}",
+                                            style: TextStyle(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: isSmallScreen ? 12 : 14,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      title: Text(
-                                        item.productName,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: isSmallScreen ? 13 : 14,
+                                        title: Text(
+                                          item.productName,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isSmallScreen ? 13 : 14,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      subtitle: Text(
-                                        '${currencyFormatter.format(item.productPrice)} / item',
-                                        style: TextStyle(
-                                          fontSize: isSmallScreen ? 11 : 13, 
-                                          color: Colors.grey[600]
+                                        subtitle: Text(
+                                          '${currencyFormatter.format(item.productPrice)} / item',
+                                          style: TextStyle(
+                                            fontSize: isSmallScreen ? 11 : 13,
+                                            color: Colors.grey[600],
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      trailing: Text(
-                                        currencyFormatter.format(item.total),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Theme.of(context).primaryColor,
-                                          fontSize: isSmallScreen ? 12 : 14,
+                                        trailing: Text(
+                                          currencyFormatter.format(item.total),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            fontSize: isSmallScreen ? 12 : 14,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
-                      ),
               ),
               const Divider(),
               Padding(
@@ -247,7 +267,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       ),
                     ),
                     Text(
-                      currencyFormatter.format(_selectedTransaction!.totalAmount),
+                      currencyFormatter.format(
+                        _selectedTransaction!.totalAmount,
+                      ),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: isSmallScreen ? 16 : 20,
@@ -276,197 +298,290 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
     final bool isSmallScreen = screenSize.width < 360;
-    
+
     return Scaffold(
-      body: _isLoading
-          ? Center(
-              child: Lottie.asset(
-                'assets/animations/loading.json',
-                width: 200,
-                height: 200,
-              ),
-            )
-          : _transactions.isEmpty
+      body:
+          _isLoading
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Lottie.asset(
-                        'assets/animations/empty_box.json',
-                        width: 200,
-                        height: 200,
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Belum ada transaksi',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ],
-                  ),
-                )
+                child: Lottie.asset(
+                  'assets/animations/loading.json',
+                  width: 200,
+                  height: 200,
+                ),
+              )
+              : _transactions.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Lottie.asset(
+                      'assets/animations/empty_box.json',
+                      width: 200,
+                      height: 200,
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Belum ada transaksi',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ],
+                ),
+              )
               : LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Stats cards
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              _buildStatCard(
-                                'Jumlah Transaksi',
-                                '$_totalTransactions',
-                                Icons.receipt_long,
-                                const Color(0xFF6C5CE7),
-                                isSmallScreen: isSmallScreen,
-                                width: isSmallScreen 
-                                    ? constraints.maxWidth 
-                                    : (constraints.maxWidth / 2) - 8,
-                              ),
-                              _buildStatCard(
-                                'Total Pendapatan',
-                                currencyFormatter.format(_totalRevenue),
-                                Icons.attach_money,
-                                Colors.green,
-                                isSmallScreen: isSmallScreen,
-                                width: isSmallScreen 
-                                    ? constraints.maxWidth 
-                                    : (constraints.maxWidth / 2) - 8,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          
-                          // Chart or List
-                          _showChart
-                              ? Expanded(
-                                  child: _buildRevenueChart(),
-                                )
-                              : Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Daftar Transaksi',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Expanded(
-                                        child: AnimationLimiter(
-                                          child: ListView.builder(
-                                            itemCount: _transactions.length,
-                                            itemBuilder: (ctx, i) {
-                                              final transaction = _transactions[i];
-                                              final isSelected = _selectedTransaction?.id == transaction.id;
-                                              
-                                              return AnimationConfiguration.staggeredList(
-                                                position: i,
-                                                duration: const Duration(milliseconds: 375),
-                                                child: SlideAnimation(
-                                                  horizontalOffset: 50.0,
-                                                  child: FadeInAnimation(
-                                                    child: Card(
-                                                      color: isSelected ? Colors.blue[50] : null,
-                                                      margin: const EdgeInsets.only(bottom: 12),
-                                                      elevation: isSelected ? 3 : 2,
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius: BorderRadius.circular(16),
-                                                        side: isSelected
-                                                            ? BorderSide(color: Theme.of(context).primaryColor, width: 2)
+                builder: (context, constraints) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Stats cards
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            _buildStatCard(
+                              'Jumlah Transaksi',
+                              '$_totalTransactions',
+                              Icons.receipt_long,
+                              const Color(0xFF6C5CE7),
+                              isSmallScreen: isSmallScreen,
+                              width:
+                                  isSmallScreen
+                                      ? constraints.maxWidth
+                                      : (constraints.maxWidth / 2) - 8,
+                            ),
+                            _buildStatCard(
+                              'Total Pendapatan',
+                              currencyFormatter.format(_totalRevenue),
+                              Icons.attach_money,
+                              Colors.green,
+                              isSmallScreen: isSmallScreen,
+                              width:
+                                  isSmallScreen
+                                      ? constraints.maxWidth
+                                      : (constraints.maxWidth / 2) - 8,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Chart or List
+                        _showChart
+                            ? Expanded(child: _buildRevenueChart())
+                            : Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Daftar Transaksi',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Expanded(
+                                    child: AnimationLimiter(
+                                      child: ListView.builder(
+                                        itemCount: _transactions.length,
+                                        itemBuilder: (ctx, i) {
+                                          final transaction = _transactions[i];
+                                          final isSelected =
+                                              _selectedTransaction?.id ==
+                                              transaction.id;
+
+                                          return AnimationConfiguration.staggeredList(
+                                            position: i,
+                                            duration: const Duration(
+                                              milliseconds: 375,
+                                            ),
+                                            child: SlideAnimation(
+                                              horizontalOffset: 50.0,
+                                              child: FadeInAnimation(
+                                                child: Card(
+                                                  color:
+                                                      isSelected
+                                                          ? Colors.blue[50]
+                                                          : null,
+                                                  margin: const EdgeInsets.only(
+                                                    bottom: 12,
+                                                  ),
+                                                  elevation: isSelected ? 3 : 2,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                    side:
+                                                        isSelected
+                                                            ? BorderSide(
+                                                              color:
+                                                                  Theme.of(
+                                                                    context,
+                                                                  ).primaryColor,
+                                                              width: 2,
+                                                            )
                                                             : BorderSide.none,
+                                                  ),
+                                                  child: InkWell(
+                                                    onTap: () async {
+                                                      await _fetchTransactionItems(
+                                                        transaction,
+                                                      );
+                                                      if (!mounted) return;
+                                                      _showTransactionDetailsModal(
+                                                        context,
+                                                      );
+                                                    },
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        isSmallScreen ? 12 : 16,
                                                       ),
-                                                      child: InkWell(
-                                                        onTap: () async {
-                                                          await _fetchTransactionItems(transaction);
-                                                          if (!mounted) return;
-                                                          _showTransactionDetailsModal(context);
-                                                        },
-                                                        borderRadius: BorderRadius.circular(16),
-                                                        child: Padding(
-                                                          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                                                          child: Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
                                                             children: [
-                                                              Row(
-                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                children: [
-                                                                  Expanded(
-                                                                    child: Row(
-                                                                      children: [
-                                                                        Container(
-                                                                          padding: const EdgeInsets.all(8),
-                                                                          decoration: BoxDecoration(
-                                                                            color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                                                            borderRadius: BorderRadius.circular(12),
+                                                              Expanded(
+                                                                child: Row(
+                                                                  children: [
+                                                                    Container(
+                                                                      padding:
+                                                                          const EdgeInsets.all(
+                                                                            8,
                                                                           ),
-                                                                          child: Icon(
-                                                                            Icons.receipt,
-                                                                            color: Theme.of(context).primaryColor,
-                                                                            size: isSmallScreen ? 16 : 20,
-                                                                          ),
+                                                                      decoration: BoxDecoration(
+                                                                        color: Theme.of(
+                                                                          context,
+                                                                        ).primaryColor.withOpacity(
+                                                                          0.1,
                                                                         ),
-                                                                        const SizedBox(width: 12),
-                                                                        Expanded(
-                                                                          child: Column(
-                                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                                            children: [
-                                                                              Text(
-                                                                                'Transaksi #${transaction.id}',
-                                                                                style: TextStyle(
-                                                                                  fontWeight: FontWeight.bold,
-                                                                                  fontSize: isSmallScreen ? 14 : 16,
-                                                                                ),
-                                                                                overflow: TextOverflow.ellipsis,
-                                                                              ),
-                                                                              const SizedBox(height: 4),
-                                                                              Text(
-                                                                                dateFormatter.format(transaction.date),
-                                                                                style: TextStyle(
-                                                                                  color: Colors.grey[600],
-                                                                                  fontSize: isSmallScreen ? 12 : 14,
-                                                                                ),
-                                                                                overflow: TextOverflow.ellipsis,
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-                                                                  Column(
-                                                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                                                    children: [
-                                                                      Text(
-                                                                        currencyFormatter.format(transaction.totalAmount),
-                                                                        style: TextStyle(
-                                                                          fontWeight: FontWeight.bold,
-                                                                          color: Theme.of(context).primaryColor,
-                                                                          fontSize: isSmallScreen ? 14 : 16,
-                                                                        ),
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(
+                                                                              12,
+                                                                            ),
                                                                       ),
-                                                                      const SizedBox(height: 4),
-                                                                      Row(
+                                                                      child: Icon(
+                                                                        Icons
+                                                                            .receipt,
+                                                                        color:
+                                                                            Theme.of(
+                                                                              context,
+                                                                            ).primaryColor,
+                                                                        size:
+                                                                            isSmallScreen
+                                                                                ? 16
+                                                                                : 20,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      width: 12,
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: Column(
+                                                                        crossAxisAlignment:
+                                                                            CrossAxisAlignment.start,
                                                                         children: [
                                                                           Text(
-                                                                            'Lihat Detail',
+                                                                            'Transaksi #${transaction.id}',
                                                                             style: TextStyle(
-                                                                              fontSize: isSmallScreen ? 10 : 12,
-                                                                              color: Colors.grey[600],
+                                                                              fontWeight:
+                                                                                  FontWeight.bold,
+                                                                              fontSize:
+                                                                                  isSmallScreen
+                                                                                      ? 14
+                                                                                      : 16,
                                                                             ),
+                                                                            overflow:
+                                                                                TextOverflow.ellipsis,
                                                                           ),
-                                                                          const SizedBox(width: 4),
-                                                                          Icon(
-                                                                            Icons.arrow_forward_ios,
-                                                                            size: isSmallScreen ? 10 : 12,
-                                                                            color: Colors.grey[600],
+                                                                          const SizedBox(
+                                                                            height:
+                                                                                4,
+                                                                          ),
+                                                                          Text(
+                                                                            dateFormatter.format(
+                                                                              transaction.date,
+                                                                            ),
+                                                                            style: TextStyle(
+                                                                              color:
+                                                                                  Colors.grey[600],
+                                                                              fontSize:
+                                                                                  isSmallScreen
+                                                                                      ? 12
+                                                                                      : 14,
+                                                                            ),
+                                                                            overflow:
+                                                                                TextOverflow.ellipsis,
                                                                           ),
                                                                         ],
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                              Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .end,
+                                                                children: [
+                                                                  Text(
+                                                                    currencyFormatter.format(
+                                                                      transaction
+                                                                          .totalAmount,
+                                                                    ),
+                                                                    style: TextStyle(
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                      color:
+                                                                          Theme.of(
+                                                                            context,
+                                                                          ).primaryColor,
+                                                                      fontSize:
+                                                                          isSmallScreen
+                                                                              ? 14
+                                                                              : 16,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    height: 4,
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      Text(
+                                                                        'Lihat Detail',
+                                                                        style: TextStyle(
+                                                                          fontSize:
+                                                                              isSmallScreen
+                                                                                  ? 10
+                                                                                  : 12,
+                                                                          color:
+                                                                              Colors.grey[600],
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(
+                                                                        width:
+                                                                            4,
+                                                                      ),
+                                                                      Icon(
+                                                                        Icons
+                                                                            .arrow_forward_ios,
+                                                                        size:
+                                                                            isSmallScreen
+                                                                                ? 10
+                                                                                : 12,
+                                                                        color:
+                                                                            Colors.grey[600],
                                                                       ),
                                                                     ],
                                                                   ),
@@ -474,51 +589,53 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                                               ),
                                                             ],
                                                           ),
-                                                        ),
+                                                        ],
                                                       ),
                                                     ),
                                                   ),
                                                 ),
-                                              );
-                                            },
-                                          ),
-                                        ),
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                        ],
-                      ),
-                    );
-                  }
-                ),
+                                ],
+                              ),
+                            ),
+                      ],
+                    ),
+                  );
+                },
+              ),
     );
   }
 
   Widget _buildRevenueChart() {
     // Group transactions by day for chart data
     Map<String, double> dailyRevenue = {};
-    
+
     for (final transaction in _transactions) {
       final date = DateFormat('yyyy-MM-dd').format(transaction.date);
       dailyRevenue[date] = (dailyRevenue[date] ?? 0) + transaction.totalAmount;
     }
-    
+
     // Sort by date
-    List<MapEntry<String, double>> sortedEntries = dailyRevenue.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-    
+    List<MapEntry<String, double>> sortedEntries =
+        dailyRevenue.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+
     // Only show last 7 days if we have more than 7 days of data
     if (sortedEntries.length > 7) {
       sortedEntries = sortedEntries.sublist(sortedEntries.length - 7);
     }
-    
+
     final List<BarChartGroupData> barGroups = [];
-    
+
     for (int i = 0; i < sortedEntries.length; i++) {
       final entry = sortedEntries[i];
       String shortDate = DateFormat('dd/MM').format(DateTime.parse(entry.key));
-      
+
       barGroups.add(
         BarChartGroupData(
           x: i,
@@ -536,7 +653,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         ),
       );
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -556,77 +673,89 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         children: [
           const Text(
             'Pendapatan per Hari',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: sortedEntries.isEmpty
-                ? const Center(child: Text('Tidak ada data yang tersedia'))
-                : BarChart(
-                    BarChartData(
-                      alignment: BarChartAlignment.spaceAround,
-                      maxY: sortedEntries.map((e) => e.value).reduce((a, b) => a > b ? a : b) * 1.2,
-                      titlesData: FlTitlesData(
-                        show: true,
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) {
-                              int index = value.toInt();
-                              if (index >= 0 && index < sortedEntries.length) {
-                                String shortDate = DateFormat('dd/MM').format(DateTime.parse(sortedEntries[index].key));
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    shortDate, 
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
+            child:
+                sortedEntries.isEmpty
+                    ? const Center(child: Text('Tidak ada data yang tersedia'))
+                    : BarChart(
+                      BarChartData(
+                        alignment: BarChartAlignment.spaceAround,
+                        maxY:
+                            sortedEntries
+                                .map((e) => e.value)
+                                .reduce((a, b) => a > b ? a : b) *
+                            1.2,
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                int index = value.toInt();
+                                if (index >= 0 &&
+                                    index < sortedEntries.length) {
+                                  String shortDate = DateFormat('dd/MM').format(
+                                    DateTime.parse(sortedEntries[index].key),
+                                  );
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Text(
+                                      shortDate,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
+                                  );
+                                }
+                                return const SizedBox();
+                              },
+                            ),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 60,
+                              getTitlesWidget: (value, meta) {
+                                return SideTitleWidget(
+                                  axisSide: meta.axisSide,
+                                  child: Text(
+                                    currencyFormatter.format(value),
+                                    style: const TextStyle(fontSize: 10),
                                   ),
                                 );
-                              }
-                              return const SizedBox();
-                            },
+                              },
+                            ),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
                           ),
                         ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 60,
-                            getTitlesWidget: (value, meta) {
-                              return SideTitleWidget(
-                                axisSide: meta.axisSide,
-                                child: Text(
-                                  currencyFormatter.format(value),
-                                  style: const TextStyle(fontSize: 10),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
+                        borderData: FlBorderData(show: false),
+                        gridData: const FlGridData(show: false),
+                        barGroups: barGroups,
                       ),
-                      borderData: FlBorderData(show: false),
-                      gridData: const FlGridData(show: false),
-                      barGroups: barGroups,
                     ),
-                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, {bool isSmallScreen = false, double? width}) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color, {
+    bool isSmallScreen = false,
+    double? width,
+  }) {
     return Container(
       width: width,
       padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -650,11 +779,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: isSmallScreen ? 20 : 24,
-            ),
+            child: Icon(icon, color: color, size: isSmallScreen ? 20 : 24),
           ),
           SizedBox(width: isSmallScreen ? 8 : 12),
           Expanded(
@@ -684,4 +809,4 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       ),
     ).animate().fade().slideY(begin: 0.1, duration: 300.ms);
   }
-} 
+}

@@ -11,7 +11,8 @@ import '../utils/image_helper.dart';
 import '../widgets/custom_notification.dart';
 
 class ProductFormScreen extends StatefulWidget {
-  const ProductFormScreen({super.key});
+  final Function(int)? onScreenChange;
+  const ProductFormScreen({Key? key, this.onScreenChange}) : super(key: key);
 
   @override
   _ProductFormScreenState createState() => _ProductFormScreenState();
@@ -264,25 +265,31 @@ class _ProductFormScreenState extends State<ProductFormScreen>
             onPressed: () {
               setState(() {
                 _viewMode = _viewMode == 0 ? 1 : 0;
+                // Reset form when switching to add mode
+                if (_viewMode == 0 && _isEditing == false) {
+                  _resetForm();
+                }
               });
             },
           ),
         ],
       ),
-      body:
-          _isLoading
-              ? Center(
-                child: Lottie.asset(
-                  'assets/animations/loading.json',
-                  width: 200,
-                  height: 200,
-                ),
-              )
-              : _viewMode == 0
-              // Form view
-              ? _buildFormView(context, screenSize, isSmallScreen, imageSize)
-              // List view
-              : _buildListView(context),
+      body: SafeArea(
+        child:
+            _isLoading
+                ? Center(
+                  child: Lottie.asset(
+                    'assets/animations/loading.json',
+                    width: 200,
+                    height: 200,
+                  ),
+                )
+                : _viewMode == 0
+                // Form view
+                ? _buildFormView(context, screenSize, isSmallScreen, imageSize)
+                // List view
+                : _buildListView(context),
+      ),
     );
   }
 
@@ -488,47 +495,63 @@ class _ProductFormScreenState extends State<ProductFormScreen>
             children: [
               Lottie.asset(
                 'assets/animations/loading.json',
-                width: 200,
-                height: 200,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Belum ada produk',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
+                width: 150,
+                height: 150,
               ),
               const SizedBox(height: 16),
+              const Text(
+                'Belum ada produk',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: () {
                   setState(() {
                     _viewMode = 0;
                   });
                 },
-                icon: const Icon(Icons.add),
-                label: const Text('Tambah Produk Baru'),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Tambah Produk'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  textStyle: const TextStyle(fontSize: 14),
+                ),
               ),
             ],
           ),
         )
-        : Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Daftar Produk',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  Text('${_products.length} item'),
+                  Text(
+                    '${_products.length} item',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Expanded(
+            ),
+            Expanded(
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: true,
+                removeBottom: true,
                 child: ListView.builder(
                   key: const PageStorageKey<String>('productList'),
                   itemCount: _products.length,
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(bottom: 4),
                   itemBuilder: (ctx, i) {
                     final product = _products[i];
                     return Dismissible(
@@ -540,23 +563,54 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                           context: context,
                           builder:
                               (ctx) => AlertDialog(
-                                title: const Text('Konfirmasi Hapus'),
+                                title: const Text(
+                                  'Konfirmasi Hapus',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                                 content: Text(
                                   'Yakin ingin menghapus ${product.name}?',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                                contentPadding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  10,
+                                  20,
+                                  0,
+                                ),
+                                titlePadding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  16,
+                                  20,
+                                  0,
+                                ),
+                                actionsPadding: const EdgeInsets.fromLTRB(
+                                  8,
+                                  0,
+                                  8,
+                                  8,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 actions: <Widget>[
                                   TextButton(
-                                    child: const Text('Batal'),
+                                    child: const Text(
+                                      'Batal',
+                                      style: TextStyle(fontSize: 13),
+                                    ),
                                     onPressed:
                                         () => Navigator.of(ctx).pop(false),
                                   ),
                                   TextButton(
                                     child: const Text(
                                       'Hapus',
-                                      style: TextStyle(color: Colors.red),
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                     onPressed:
                                         () => Navigator.of(ctx).pop(true),
@@ -587,17 +641,21 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                       background: Container(
                         decoration: BoxDecoration(
                           color: Colors.red,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.only(right: 16),
-                        child: const Icon(Icons.delete, color: Colors.white),
+                        child: const Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                       child: Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        elevation: 3,
+                        margin: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+                        elevation: 1,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: InkWell(
                           onTap: () {
@@ -606,20 +664,20 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                               _viewMode = 0; // Switch to form view
                             });
                           },
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                           child: Padding(
-                            padding: const EdgeInsets.all(12.0),
+                            padding: const EdgeInsets.all(6.0),
                             child: Row(
                               children: [
                                 // Gambar produk
                                 Container(
-                                  width: 60,
-                                  height: 60,
+                                  width: 40,
+                                  height: 40,
                                   decoration: BoxDecoration(
                                     color: Theme.of(
                                       context,
                                     ).primaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(6),
                                     image:
                                         product.imageUrl != null
                                             ? DecorationImage(
@@ -634,39 +692,41 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                                       product.imageUrl == null
                                           ? const Icon(
                                             Icons.inventory,
-                                            size: 24,
+                                            size: 18,
                                           )
                                           : null,
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 8),
 
                                 // Info produk
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
                                         product.name,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 16,
+                                          fontSize: 13,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 1),
                                       Text(
                                         'Rp ${product.price.toStringAsFixed(0)}',
                                         style: TextStyle(
                                           color: Theme.of(context).primaryColor,
                                           fontWeight: FontWeight.w500,
+                                          fontSize: 12,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 1),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 2,
+                                          horizontal: 4,
+                                          vertical: 1,
                                         ),
                                         decoration: BoxDecoration(
                                           color:
@@ -676,13 +736,13 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                                                   )
                                                   : Colors.red.withOpacity(0.2),
                                           borderRadius: BorderRadius.circular(
-                                            8,
+                                            3,
                                           ),
                                         ),
                                         child: Text(
                                           'Stok: ${product.stock}',
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 10,
                                             color:
                                                 product.stock > 0
                                                     ? Colors.green.shade700
@@ -703,11 +763,11 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                                     ).withOpacity(0.2),
                                     shape: BoxShape.circle,
                                   ),
-                                  padding: const EdgeInsets.all(8),
+                                  padding: const EdgeInsets.all(4),
                                   child: const Icon(
                                     Icons.edit,
                                     color: Color(0xFF64B5F6),
-                                    size: 20,
+                                    size: 16,
                                   ),
                                 ),
                               ],
@@ -719,8 +779,8 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                   },
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
   }
 }

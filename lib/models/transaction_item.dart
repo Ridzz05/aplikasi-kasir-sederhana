@@ -17,6 +17,27 @@ class TransactionItem {
     required this.total,
   });
 
+  // Metode copyWith untuk membuat salinan dengan beberapa properti yang diubah
+  TransactionItem copyWith({
+    int? id,
+    int? transactionId,
+    int? productId,
+    String? productName,
+    double? productPrice,
+    int? quantity,
+    double? total,
+  }) {
+    return TransactionItem(
+      id: id ?? this.id,
+      transactionId: transactionId ?? this.transactionId,
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
+      productPrice: productPrice ?? this.productPrice,
+      quantity: quantity ?? this.quantity,
+      total: total ?? this.total,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -40,4 +61,4 @@ class TransactionItem {
       total: map['total'],
     );
   }
-} 
+}

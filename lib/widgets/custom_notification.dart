@@ -1,175 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
-enum NotificationType {
-  success,
-  error,
-  info,
-  warning,
-}
+enum NotificationType { success, error, warning, info }
 
-class CustomNotification extends StatelessWidget {
-  final String message;
-  final NotificationType type;
-  final VoidCallback? onAction;
-  final String? actionLabel;
-  final VoidCallback onClose;
-  
-  const CustomNotification({
-    super.key,
-    required this.message,
-    this.type = NotificationType.info,
-    this.onAction,
-    this.actionLabel,
-    required this.onClose,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: Align(
-          alignment: Alignment.topRight,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 300),
-            decoration: BoxDecoration(
-              color: _getBackgroundColor(),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      _getIcon(),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _getTitle(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              message,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white, size: 18),
-                        onPressed: onClose,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                ),
-                if (onAction != null && actionLabel != null)
-                  InkWell(
-                    onTap: onAction,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.1),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(12),
-                          bottomRight: Radius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        actionLabel!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Color _getBackgroundColor() {
-    switch (type) {
-      case NotificationType.success:
-        return const Color(0xFF4CAF50); // Green
-      case NotificationType.error:
-        return const Color(0xFFE53935); // Red
-      case NotificationType.warning:
-        return const Color(0xFFFF9800); // Orange
-      case NotificationType.info:
-      default:
-        return const Color(0xFF64B5F6); // Blue
-    }
-  }
-
-  String _getTitle() {
-    switch (type) {
-      case NotificationType.success:
-        return 'Berhasil';
-      case NotificationType.error:
-        return 'Gagal';
-      case NotificationType.warning:
-        return 'Perhatian';
-      case NotificationType.info:
-      default:
-        return 'Informasi';
-    }
-  }
-
-  Widget _getIcon() {
-    IconData iconData;
-    switch (type) {
-      case NotificationType.success:
-        iconData = Icons.check_circle;
-        break;
-      case NotificationType.error:
-        iconData = Icons.error;
-        break;
-      case NotificationType.warning:
-        iconData = Icons.warning;
-        break;
-      case NotificationType.info:
-      default:
-        iconData = Icons.info;
-    }
-    
-    return Icon(
-      iconData,
-      color: Colors.white,
-      size: 24,
-    );
-  }
-}
-
-// Function to show notification overlay
 void showCustomNotification({
   required BuildContext context,
   required String message,
@@ -178,32 +10,216 @@ void showCustomNotification({
   String? actionLabel,
   Duration duration = const Duration(seconds: 3),
 }) {
-  OverlayEntry? overlayEntry;
-  
-  overlayEntry = OverlayEntry(
-    builder: (context) => Positioned(
-      top: MediaQuery.of(context).padding.top + 16,
-      right: 0,
-      child: CustomNotification(
-        message: message,
-        type: type,
-        onAction: onAction,
-        actionLabel: actionLabel,
-        onClose: () {
-          overlayEntry?.remove();
-        },
-      )
-      .animate()
-      .slideX(begin: 1, end: 0, duration: 300.ms, curve: Curves.easeOutCirc)
-      .fadeIn(duration: 300.ms),
-    ),
+  final overlay = Overlay.of(context);
+
+  // Tampilkan hanya satu notifikasi dalam satu waktu
+  // Perlu variabel statis untuk melacak notifikasi yang aktif
+  if (_NotificationManager.isShowing) {
+    // Hapus notifikasi sebelumnya
+    _NotificationManager.hideCurrentNotification();
+  }
+
+  // Dapatkan warna berdasarkan tipe
+  final Color backgroundColor;
+  final IconData iconData;
+
+  switch (type) {
+    case NotificationType.success:
+      backgroundColor = Colors.green.shade600;
+      iconData = Icons.check_circle;
+      break;
+    case NotificationType.error:
+      backgroundColor = Colors.red.shade600;
+      iconData = Icons.error;
+      break;
+    case NotificationType.warning:
+      backgroundColor = Colors.orange.shade600;
+      iconData = Icons.warning;
+      break;
+    case NotificationType.info:
+      backgroundColor = Colors.blue.shade600;
+      iconData = Icons.info;
+      break;
+  }
+
+  final overlayEntry = OverlayEntry(
+    builder:
+        (context) => _NotificationWidget(
+          message: message,
+          backgroundColor: backgroundColor,
+          iconData: iconData,
+          onAction: onAction,
+          actionLabel: actionLabel,
+          duration: duration,
+        ),
   );
 
-  Overlay.of(context).insert(overlayEntry);
+  // Simpan overlayEntry saat ini
+  _NotificationManager.currentNotification = overlayEntry;
+  _NotificationManager.isShowing = true;
 
+  overlay.insert(overlayEntry);
+
+  // Hapus otomatis setelah durasi
   Future.delayed(duration, () {
-    if (overlayEntry?.mounted ?? false) {
-      overlayEntry?.remove();
+    if (_NotificationManager.currentNotification == overlayEntry) {
+      overlayEntry.remove();
+      _NotificationManager.isShowing = false;
+      _NotificationManager.currentNotification = null;
     }
   });
-} 
+}
+
+// Class untuk mengelola notifikasi yang ditampilkan
+class _NotificationManager {
+  static bool isShowing = false;
+  static OverlayEntry? currentNotification;
+
+  static void hideCurrentNotification() {
+    if (currentNotification != null) {
+      currentNotification!.remove();
+      isShowing = false;
+      currentNotification = null;
+    }
+  }
+}
+
+// Widget untuk menampilkan notifikasi - mutable state
+class _NotificationWidget extends StatefulWidget {
+  final String message;
+  final Color backgroundColor;
+  final IconData iconData;
+  final VoidCallback? onAction;
+  final String? actionLabel;
+  final Duration duration;
+
+  const _NotificationWidget({
+    required this.message,
+    required this.backgroundColor,
+    required this.iconData,
+    this.onAction,
+    this.actionLabel,
+    required this.duration,
+  });
+
+  @override
+  _NotificationWidgetState createState() => _NotificationWidgetState();
+}
+
+class _NotificationWidgetState extends State<_NotificationWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _offsetAnimation = Tween<Offset>(
+      begin: const Offset(0, -1.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _controller.forward();
+
+    // Setup exit animation
+    Future.delayed(widget.duration - const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _controller.reverse();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final hasAction = widget.onAction != null && widget.actionLabel != null;
+
+    // Use AnimatedBuilder to optimize rendering
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Positioned(
+          top: mediaQuery.viewPadding.top + 10.0,
+          left: 10.0,
+          right: 10.0,
+          child: SlideTransition(
+            position: _offsetAnimation,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Material(
+                elevation: 4.0,
+                borderRadius: BorderRadius.circular(12.0),
+                color: widget.backgroundColor,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: 16.0,
+                    top: 12.0,
+                    bottom: 12.0,
+                    right: hasAction ? 8.0 : 16.0,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(widget.iconData, color: Colors.white, size: 24.0),
+                      const SizedBox(width: 12.0),
+                      Expanded(
+                        child: Text(
+                          widget.message,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.0,
+                          ),
+                        ),
+                      ),
+                      if (hasAction)
+                        TextButton(
+                          onPressed: () {
+                            _NotificationManager.hideCurrentNotification();
+                            widget.onAction!();
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                              vertical: 6.0,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                          ),
+                          child: Text(
+                            widget.actionLabel!,
+                            style: const TextStyle(
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
