@@ -11,27 +11,31 @@ import '../utils/image_helper.dart';
 import '../widgets/custom_notification.dart';
 
 class ProductFormScreen extends StatefulWidget {
-  const ProductFormScreen({Key? key}) : super(key: key);
+  const ProductFormScreen({super.key});
 
   @override
   _ProductFormScreenState createState() => _ProductFormScreenState();
 }
 
-class _ProductFormScreenState extends State<ProductFormScreen> with SingleTickerProviderStateMixin {
+class _ProductFormScreenState extends State<ProductFormScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
-  
+
   late AnimationController _animationController;
   bool _isLoading = false;
   List<Product> _products = [];
-  
+
   Product? _editingProduct;
   bool _isEditing = false;
-  
+
   String? _selectedImagePath;
   bool _isUploading = false;
+
+  // View mode (0 = form, 1 = list)
+  int _viewMode = 0;
 
   @override
   void initState() {
@@ -41,8 +45,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
       duration: const Duration(milliseconds: 300),
     );
     _fetchProducts();
+    print("ProductFormScreen initialized");
   }
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -56,7 +61,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final products = await DatabaseHelper.instance.getAllProducts();
       setState(() {
@@ -84,7 +89,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
 
   void _showErrorSnackBar(String message) {
     showCustomNotification(
-      context: context, 
+      context: context,
       message: message,
       type: NotificationType.error,
     );
@@ -100,21 +105,23 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
       _selectedImagePath = product.imageUrl;
     });
   }
-  
+
   Future<void> _pickImage(ImageSource source) async {
     setState(() {
       _isUploading = true;
     });
-    
+
     try {
       final imagePath = await ImageHelper.pickAndProcessImage(source: source);
-      
+
       if (imagePath != null) {
         // Jika sebelumnya sudah ada gambar, hapus yang lama
-        if (_selectedImagePath != null && _isEditing && _editingProduct?.imageUrl != _selectedImagePath) {
+        if (_selectedImagePath != null &&
+            _isEditing &&
+            _editingProduct?.imageUrl != _selectedImagePath) {
           await ImageHelper.deleteImage(_selectedImagePath);
         }
-        
+
         setState(() {
           _selectedImagePath = imagePath;
         });
@@ -127,52 +134,56 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
       });
     }
   }
-  
+
   void _showImagePickerModal() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20))
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('Ambil Foto'),
-              onTap: () {
-                Navigator.of(context).pop();
-                _pickImage(ImageSource.camera);
-              },
+      builder:
+          (context) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_camera),
+                  title: const Text('Ambil Foto'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Pilih dari Galeri'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+                if (_selectedImagePath != null)
+                  ListTile(
+                    leading: const Icon(Icons.delete, color: Colors.red),
+                    title: const Text(
+                      'Hapus Gambar',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      setState(() {
+                        _selectedImagePath = null;
+                      });
+                    },
+                  ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Pilih dari Galeri'),
-              onTap: () {
-                Navigator.of(context).pop();
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-            if (_selectedImagePath != null)
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Hapus Gambar', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _selectedImagePath = null;
-                  });
-                },
-              ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
   Future<void> _saveForm() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() {
       _isLoading = true;
     });
@@ -180,11 +191,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
     try {
       if (_isEditing && _editingProduct != null) {
         // Jika imageUrl berubah, hapus gambar lama
-        if (_editingProduct!.imageUrl != null && 
+        if (_editingProduct!.imageUrl != null &&
             _selectedImagePath != _editingProduct!.imageUrl) {
           await ImageHelper.deleteImage(_editingProduct!.imageUrl);
         }
-        
+
         // Update existing product
         final updatedProduct = _editingProduct!.copyWith(
           name: _nameController.text.trim(),
@@ -193,11 +204,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
           imageUrl: _selectedImagePath,
         );
         await DatabaseHelper.instance.updateProduct(updatedProduct);
-        
+
         setState(() {
           _isLoading = false;
         });
-        
+
         showCustomNotification(
           context: context,
           message: 'Produk ${updatedProduct.name} berhasil diperbarui',
@@ -212,20 +223,20 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
           imageUrl: _selectedImagePath,
         );
         await DatabaseHelper.instance.insertProduct(product);
-        
+
         setState(() {
           _isLoading = false;
         });
-        
+
         showCustomNotification(
           context: context,
           message: 'Produk ${product.name} berhasil ditambahkan',
           type: NotificationType.success,
         );
       }
-      
+
       _resetForm();
-      
+
       // Refresh product list
       _fetchProducts();
     } catch (e) {
@@ -241,363 +252,475 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
     final Size screenSize = MediaQuery.of(context).size;
     final bool isSmallScreen = screenSize.width < 360;
     final double imageSize = isSmallScreen ? 120 : 150;
-    
+
+    print("Building ProductFormScreen with viewMode: $_viewMode");
+
     return Scaffold(
-      body: _isLoading
-          ? Center(
-              child: Lottie.asset(
+      appBar: AppBar(
+        title: Text(_viewMode == 0 ? 'Tambah Barang' : 'Daftar Produk'),
+        actions: [
+          IconButton(
+            icon: Icon(_viewMode == 0 ? Icons.list : Icons.add),
+            onPressed: () {
+              setState(() {
+                _viewMode = _viewMode == 0 ? 1 : 0;
+              });
+            },
+          ),
+        ],
+      ),
+      body:
+          _isLoading
+              ? Center(
+                child: Lottie.asset(
+                  'assets/animations/loading.json',
+                  width: 200,
+                  height: 200,
+                ),
+              )
+              : _viewMode == 0
+              // Form view
+              ? _buildFormView(context, screenSize, isSmallScreen, imageSize)
+              // List view
+              : _buildListView(context),
+    );
+  }
+
+  Widget _buildFormView(
+    BuildContext context,
+    Size screenSize,
+    bool isSmallScreen,
+    double imageSize,
+  ) {
+    print("Building form view");
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Container(
+        color: Colors.white,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Center(
+                  child: Text(
+                    _isEditing ? 'Edit Produk' : 'Tambah Produk Baru',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Product Image
+                Center(
+                  child: GestureDetector(
+                    onTap: _isUploading ? null : _showImagePickerModal,
+                    child: Container(
+                      width: imageSize,
+                      height: imageSize,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                        image:
+                            _selectedImagePath != null
+                                ? DecorationImage(
+                                  image: FileImage(File(_selectedImagePath!)),
+                                  fit: BoxFit.cover,
+                                )
+                                : null,
+                      ),
+                      child:
+                          _isUploading
+                              ? const Center(child: CircularProgressIndicator())
+                              : _selectedImagePath == null
+                              ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.add_a_photo,
+                                      size: isSmallScreen ? 32 : 40,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Tambah Gambar',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: isSmallScreen ? 12 : 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                              : null,
+                    ),
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? 16 : 24),
+
+                // Name Field
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nama Barang',
+                    prefixIcon: Icon(Icons.inventory),
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Mohon masukkan nama barang';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Price Field
+                TextFormField(
+                  controller: _priceController,
+                  decoration: const InputDecoration(
+                    labelText: 'Harga',
+                    prefixIcon: Icon(Icons.attach_money),
+                    prefixText: 'Rp ',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d+\.?\d{0,2}'),
+                    ),
+                  ],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Mohon masukkan harga barang';
+                    }
+                    try {
+                      final price = double.parse(value);
+                      if (price <= 0) {
+                        return 'Harga harus lebih dari 0';
+                      }
+                    } catch (e) {
+                      return 'Format harga tidak valid';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Stock Field
+                TextFormField(
+                  controller: _stockController,
+                  decoration: const InputDecoration(
+                    labelText: 'Stok',
+                    prefixIcon: Icon(Icons.inventory_2),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Mohon masukkan jumlah stok';
+                    }
+                    try {
+                      final stock = int.parse(value);
+                      if (stock < 0) {
+                        return 'Stok tidak boleh negatif';
+                      }
+                    } catch (e) {
+                      return 'Format stok tidak valid';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: isSmallScreen ? 24 : 32),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    if (_isEditing)
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _resetForm,
+                          icon: const Icon(Icons.cancel),
+                          label: const Text('Batal'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                    if (_isEditing) const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _saveForm,
+                        icon: Icon(_isEditing ? Icons.update : Icons.add),
+                        label: Text(
+                          _isEditing ? 'Perbarui Produk' : 'Tambah Produk',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListView(BuildContext context) {
+    print("Building list view with ${_products.length} products");
+    return _products.isEmpty
+        ? Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Lottie.asset(
                 'assets/animations/loading.json',
                 width: 200,
                 height: 200,
               ),
-            )
-          : GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Form(
-                              key: _formKey,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Product Image
-                                  Center(
-                                    child: GestureDetector(
-                                      onTap: _isUploading ? null : _showImagePickerModal,
-                                      child: Container(
-                                        width: imageSize,
-                                        height: imageSize,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.grey[300]!),
-                                          image: _selectedImagePath != null
-                                              ? DecorationImage(
-                                                  image: FileImage(File(_selectedImagePath!)),
-                                                  fit: BoxFit.cover,
-                                                )
-                                              : null,
-                                        ),
-                                        child: _isUploading
-                                            ? const Center(
-                                                child: CircularProgressIndicator(),
-                                              )
-                                            : _selectedImagePath == null
-                                                ? Center(
-                                                    child: Column(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Icon(
-                                                          Icons.add_a_photo,
-                                                          size: isSmallScreen ? 32 : 40,
-                                                          color: Colors.grey,
-                                                        ),
-                                                        const SizedBox(height: 8),
-                                                        Text(
-                                                          'Tambah Gambar',
-                                                          style: TextStyle(
-                                                            color: Colors.grey,
-                                                            fontSize: isSmallScreen ? 12 : 14,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  )
-                                                : null,
-                                      ),
-                                    ),
+              const SizedBox(height: 24),
+              const Text(
+                'Belum ada produk',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _viewMode = 0;
+                  });
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Tambah Produk Baru'),
+              ),
+            ],
+          ),
+        )
+        : Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Daftar Produk',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text('${_products.length} item'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  key: const PageStorageKey<String>('productList'),
+                  itemCount: _products.length,
+                  itemBuilder: (ctx, i) {
+                    final product = _products[i];
+                    return Dismissible(
+                      key: Key(product.id.toString()),
+                      direction: DismissDirection.endToStart,
+                      confirmDismiss: (_) async {
+                        // Konfirmasi hapus
+                        return await showDialog(
+                          context: context,
+                          builder:
+                              (ctx) => AlertDialog(
+                                title: const Text('Konfirmasi Hapus'),
+                                content: Text(
+                                  'Yakin ingin menghapus ${product.name}?',
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: const Text('Batal'),
+                                    onPressed:
+                                        () => Navigator.of(ctx).pop(false),
                                   ),
-                                  SizedBox(height: isSmallScreen ? 16 : 24),
-                                  
-                                  // Name Field
-                                  TextFormField(
-                                    controller: _nameController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Nama Barang',
-                                      prefixIcon: Icon(Icons.inventory),
+                                  TextButton(
+                                    child: const Text(
+                                      'Hapus',
+                                      style: TextStyle(color: Colors.red),
                                     ),
-                                    textCapitalization: TextCapitalization.words,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Mohon masukkan nama barang';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  
-                                  // Price Field
-                                  TextFormField(
-                                    controller: _priceController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Harga',
-                                      prefixIcon: Icon(Icons.attach_money),
-                                      prefixText: 'Rp ',
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                                    ],
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Mohon masukkan harga barang';
-                                      }
-                                      try {
-                                        final price = double.parse(value);
-                                        if (price <= 0) {
-                                          return 'Harga harus lebih dari 0';
-                                        }
-                                      } catch (e) {
-                                        return 'Format harga tidak valid';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  
-                                  // Stock Field
-                                  TextFormField(
-                                    controller: _stockController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Stok',
-                                      prefixIcon: Icon(Icons.inventory_2),
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Mohon masukkan jumlah stok';
-                                      }
-                                      try {
-                                        final stock = int.parse(value);
-                                        if (stock < 0) {
-                                          return 'Stok tidak boleh negatif';
-                                        }
-                                      } catch (e) {
-                                        return 'Format stok tidak valid';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 24 : 32),
-                                  
-                                  // Save Button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton.icon(
-                                      onPressed: _saveForm,
-                                      icon: Icon(_isEditing ? Icons.update : Icons.add),
-                                      label: Text(_isEditing ? 'Perbarui Produk' : 'Tambah Produk'),
-                                    ),
+                                    onPressed:
+                                        () => Navigator.of(ctx).pop(true),
                                   ),
                                 ],
                               ),
-                            ),
-                          ),
+                        );
+                      },
+                      onDismissed: (_) async {
+                        // Hapus gambar jika ada
+                        if (product.imageUrl != null) {
+                          await ImageHelper.deleteImage(product.imageUrl);
+                        }
+
+                        await DatabaseHelper.instance.deleteProduct(
+                          product.id!,
+                        );
+                        _fetchProducts();
+
+                        if (context.mounted) {
+                          showCustomNotification(
+                            context: context,
+                            message: '${product.name} telah dihapus',
+                            type: NotificationType.success,
+                          );
+                        }
+                      },
+                      background: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        
-                        // Products List - Only show if not editing and there are products
-                        if (!_isEditing && _products.isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Daftar Produk',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Expanded(
-                            child: AnimationLimiter(
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: _products.length,
-                                itemBuilder: (ctx, i) {
-                                  final product = _products[i];
-                                  return AnimationConfiguration.staggeredList(
-                                    position: i,
-                                    duration: const Duration(milliseconds: 375),
-                                    child: SlideAnimation(
-                                      horizontalOffset: 50.0,
-                                      child: FadeInAnimation(
-                                        child: Dismissible(
-                                          key: Key(product.id.toString()),
-                                          direction: DismissDirection.endToStart,
-                                          confirmDismiss: (_) async {
-                                            // Konfirmasi hapus
-                                            return await showDialog(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: const Text('Konfirmasi Hapus'),
-                                                content: Text('Yakin ingin menghapus ${product.name}?'),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(16),
-                                                ),
-                                                actions: <Widget>[
-                                                  TextButton(
-                                                    child: const Text('Batal'),
-                                                    onPressed: () => Navigator.of(ctx).pop(false),
-                                                  ),
-                                                  TextButton(
-                                                    child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                                                    onPressed: () => Navigator.of(ctx).pop(true),
-                                                  ),
-                                                ],
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 16),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      child: Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            _prepareEdit(product);
+                            setState(() {
+                              _viewMode = 0; // Switch to form view
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Row(
+                              children: [
+                                // Gambar produk
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    image:
+                                        product.imageUrl != null
+                                            ? DecorationImage(
+                                              image: FileImage(
+                                                File(product.imageUrl!),
                                               ),
-                                            );
-                                          },
-                                          onDismissed: (_) async {
-                                            // Hapus gambar jika ada
-                                            if (product.imageUrl != null) {
-                                              await ImageHelper.deleteImage(product.imageUrl);
-                                            }
-                                            
-                                            await DatabaseHelper.instance.deleteProduct(product.id!);
-                                            _fetchProducts();
-                                            
-                                            if (context.mounted) {
-                                              showCustomNotification(
-                                                context: context,
-                                                message: '${product.name} telah dihapus',
-                                                type: NotificationType.success,
-                                              );
-                                            }
-                                          },
-                                          background: Container(
-                                            decoration: BoxDecoration(
-                                              color: Colors.red,
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            alignment: Alignment.centerRight,
-                                            padding: const EdgeInsets.only(right: 16),
-                                            child: const Icon(
-                                              Icons.delete,
-                                              color: Colors.white,
-                                            ),
+                                              fit: BoxFit.cover,
+                                            )
+                                            : null,
+                                  ),
+                                  child:
+                                      product.imageUrl == null
+                                          ? const Icon(
+                                            Icons.inventory,
+                                            size: 24,
+                                          )
+                                          : null,
+                                ),
+                                const SizedBox(width: 16),
+
+                                // Info produk
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Rp ${product.price.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          color: Theme.of(context).primaryColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              product.stock > 0
+                                                  ? Colors.green.withOpacity(
+                                                    0.2,
+                                                  )
+                                                  : Colors.red.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
-                                          child: Card(
-                                            margin: const EdgeInsets.only(bottom: 8),
-                                            elevation: 3,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: InkWell(
-                                              onTap: () => _prepareEdit(product),
-                                              borderRadius: BorderRadius.circular(12),
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(12.0),
-                                                child: Row(
-                                                  children: [
-                                                    // Gambar produk
-                                                    Container(
-                                                      width: 60,
-                                                      height: 60,
-                                                      decoration: BoxDecoration(
-                                                        color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                                        borderRadius: BorderRadius.circular(8),
-                                                        image: product.imageUrl != null
-                                                            ? DecorationImage(
-                                                                image: FileImage(File(product.imageUrl!)),
-                                                                fit: BoxFit.cover,
-                                                              )
-                                                            : null,
-                                                      ),
-                                                      child: product.imageUrl == null
-                                                          ? const Icon(Icons.inventory, size: 24)
-                                                          : null,
-                                                    ),
-                                                    const SizedBox(width: 16),
-                                                    
-                                                    // Info produk
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                        children: [
-                                                          Text(
-                                                            product.name,
-                                                            style: const TextStyle(
-                                                              fontWeight: FontWeight.bold,
-                                                              fontSize: 16,
-                                                            ),
-                                                            overflow: TextOverflow.ellipsis,
-                                                          ),
-                                                          const SizedBox(height: 4),
-                                                          Text(
-                                                            'Rp ${product.price.toStringAsFixed(0)}',
-                                                            style: TextStyle(
-                                                              color: Theme.of(context).primaryColor,
-                                                              fontWeight: FontWeight.w500,
-                                                            ),
-                                                          ),
-                                                          const SizedBox(height: 4),
-                                                          Container(
-                                                            padding: const EdgeInsets.symmetric(
-                                                              horizontal: 8,
-                                                              vertical: 2,
-                                                            ),
-                                                            decoration: BoxDecoration(
-                                                              color: product.stock > 0
-                                                                  ? Colors.green.withOpacity(0.2)
-                                                                  : Colors.red.withOpacity(0.2),
-                                                              borderRadius: BorderRadius.circular(8),
-                                                            ),
-                                                            child: Text(
-                                                              'Stok: ${product.stock}',
-                                                              style: TextStyle(
-                                                                fontSize: 12,
-                                                                color: product.stock > 0
-                                                                    ? Colors.green.shade700
-                                                                    : Colors.red.shade700,
-                                                                fontWeight: FontWeight.w500,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    
-                                                    // Edit icon
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(0xFF64B5F6).withOpacity(0.2),
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                      padding: const EdgeInsets.all(8),
-                                                      child: const Icon(
-                                                        Icons.edit,
-                                                        color: Color(0xFF64B5F6),
-                                                        size: 20,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
+                                        ),
+                                        child: Text(
+                                          'Stok: ${product.stock}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color:
+                                                product.stock > 0
+                                                    ? Colors.green.shade700
+                                                    : Colors.red.shade700,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Edit icon
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFF64B5F6,
+                                    ).withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  child: const Icon(
+                                    Icons.edit,
+                                    color: Color(0xFF64B5F6),
+                                    size: 20,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ],
-                    ),
-                  );
-                }
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-    );
+            ],
+          ),
+        );
   }
-} 
+}

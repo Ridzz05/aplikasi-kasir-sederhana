@@ -11,7 +11,7 @@ import '../providers/cart_provider.dart';
 import '../widgets/custom_notification.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({Key? key}) : super(key: key);
+  const ProductListScreen({super.key});
 
   @override
   _ProductListScreenState createState() => _ProductListScreenState();
@@ -184,11 +184,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
+            tooltip: 'Tambah Barang',
             child: const Icon(
               Icons.add,
               size: 28,
             ),
-            tooltip: 'Tambah Barang',
           ),
         ],
       ),

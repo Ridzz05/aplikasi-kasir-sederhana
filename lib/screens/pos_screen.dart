@@ -15,7 +15,7 @@ import '../providers/page_controller_provider.dart';
 import '../widgets/custom_notification.dart';
 
 class POSScreen extends StatefulWidget {
-  const POSScreen({Key? key}) : super(key: key);
+  const POSScreen({super.key});
 
   @override
   _POSScreenState createState() => _POSScreenState();
@@ -73,7 +73,7 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
     if (!sufficientStock) {
       showCustomNotification(
         context: context,
-        message: 'Stok ${insufficientStockItem} tidak mencukupi',
+        message: 'Stok $insufficientStockItem tidak mencukupi',
         type: NotificationType.error,
       );
       return;

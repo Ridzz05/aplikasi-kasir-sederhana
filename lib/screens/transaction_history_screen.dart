@@ -10,7 +10,7 @@ import '../models/transaction_item.dart';
 import '../widgets/custom_notification.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
-  const TransactionHistoryScreen({Key? key}) : super(key: key);
+  const TransactionHistoryScreen({super.key});
 
   @override
   _TransactionHistoryScreenState createState() => _TransactionHistoryScreenState();
@@ -28,7 +28,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   List<app_transaction.Transaction> _transactions = [];
   app_transaction.Transaction? _selectedTransaction;
   List<TransactionItem> _transactionItems = [];
-  bool _showChart = false;
+  final bool _showChart = false;
   int _totalTransactions = 0;
   double _totalRevenue = 0;
 

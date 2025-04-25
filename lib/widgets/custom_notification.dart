@@ -16,13 +16,13 @@ class CustomNotification extends StatelessWidget {
   final VoidCallback onClose;
   
   const CustomNotification({
-    Key? key,
+    super.key,
     required this.message,
     this.type = NotificationType.info,
     this.onAction,
     this.actionLabel,
     required this.onClose,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

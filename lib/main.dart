@@ -133,11 +133,11 @@ class _HomePageState extends State<HomePage> {
                 ),
                 body: PageView(
                   controller: pageProvider.pageController,
-                  children: _screens,
                   onPageChanged: (index) {
                     pageProvider.setPage(index);
                   },
                   physics: const NeverScrollableScrollPhysics(),
+                  children: _screens,
                 ),
               ),
             ),
@@ -165,11 +165,11 @@ class _HomePageState extends State<HomePage> {
         ),
         body: PageView(
           controller: pageProvider.pageController,
-          children: _screens,
           onPageChanged: (index) {
             pageProvider.setPage(index);
           },
           physics: const NeverScrollableScrollPhysics(),
+          children: _screens,
         ),
       );
     }
