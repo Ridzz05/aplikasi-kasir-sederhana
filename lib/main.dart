@@ -4,13 +4,15 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'providers/cart_provider.dart';
 import 'providers/page_controller_provider.dart';
+import 'providers/cached_product_provider.dart';
+import 'providers/store_info_provider.dart';
 import 'screens/product_form_screen.dart';
 import 'screens/pos_screen.dart';
 import 'screens/transaction_history_screen.dart';
 import 'screens/product_list_screen.dart';
 import 'widgets/custom_notification.dart';
-import 'providers/cached_product_provider.dart';
 import 'database/database_helper.dart';
+import 'screens/store_settings_screen.dart';
 
 void main() {
   // Optimasi startup
@@ -48,6 +50,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (ctx) => CartProvider()),
         ChangeNotifierProvider(create: (ctx) => PageControllerProvider()),
         ChangeNotifierProvider(create: (ctx) => CachedProductProvider()),
+        ChangeNotifierProvider(create: (ctx) => StoreInfoProvider()),
       ],
       child: MaterialApp(
         title: 'Aplikasi Kasir',
@@ -141,6 +144,17 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _initializeScreens();
+    _initializeProviders();
+  }
+
+  void _initializeProviders() {
+    // Initialize store info
+    Future.delayed(Duration.zero, () {
+      Provider.of<StoreInfoProvider>(
+        context,
+        listen: false,
+      ).initializeStoreInfo();
+    });
   }
 
   void _initializeScreens() {
@@ -223,7 +237,21 @@ class _HomePageState extends State<HomePage> {
 
     switch (index) {
       case 0: // Kasir screen
-        return null;
+        final storeProvider = Provider.of<StoreInfoProvider>(context);
+        return [
+          IconButton(
+            icon: const Icon(Icons.store),
+            tooltip: 'Pengaturan Toko',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const StoreSettingsScreen(),
+                ),
+              );
+            },
+          ),
+        ];
 
       case 1: // Product Form screen
         final isEditing = false; // This would need to be maintained somewhere
@@ -319,6 +347,21 @@ class _HomePageState extends State<HomePage> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ListTile(
+                  leading: const Icon(Icons.store, color: Colors.blue),
+                  title: const Text('Pengaturan Toko'),
+                  subtitle: const Text('Ubah nama toko, alamat, dan lainnya'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StoreSettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(),
                 ListTile(
                   leading: const Icon(Icons.delete_forever, color: Colors.red),
                   title: const Text('Reset Database'),

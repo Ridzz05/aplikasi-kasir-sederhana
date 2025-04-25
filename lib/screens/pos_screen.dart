@@ -12,6 +12,7 @@ import '../models/transaction.dart' as app_transaction;
 import '../models/transaction_item.dart';
 import '../providers/cart_provider.dart';
 import '../providers/page_controller_provider.dart';
+import '../providers/store_info_provider.dart';
 import '../widgets/custom_notification.dart';
 
 class POSScreen extends StatefulWidget {
@@ -1466,28 +1467,57 @@ class _POSScreenState extends State<POSScreen>
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade200),
                           ),
-                          child: Column(
-                            children: [
-                              Text(
-                                'APLIKASI KASIR',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.2,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Jl. Contoh No. 123, Kota',
-                                style: TextStyle(fontSize: 14),
-                              ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'Telp: (021) 123-4567',
-                                style: TextStyle(fontSize: 14),
-                              ),
-                            ],
+                          child: Consumer<StoreInfoProvider>(
+                            builder: (context, storeProvider, _) {
+                              final storeInfo = storeProvider.storeInfo;
+                              return Column(
+                                children: [
+                                  if (storeInfo.showLogo &&
+                                      storeInfo.logoPath != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16,
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Image.file(
+                                          File(storeInfo.logoPath!),
+                                          width: 80,
+                                          height: 80,
+                                          fit: BoxFit.contain,
+                                          errorBuilder:
+                                              (_, __, ___) => const SizedBox(),
+                                        ),
+                                      ),
+                                    ),
+                                  Text(
+                                    storeInfo.storeName,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.2,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    storeInfo.address,
+                                    style: const TextStyle(fontSize: 14),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Telp: ${storeInfo.phone}',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Kasir: ${storeInfo.cashierName}',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -1768,42 +1798,49 @@ class _POSScreenState extends State<POSScreen>
                             ).primaryColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                          child: Consumer<StoreInfoProvider>(
+                            builder: (context, storeProvider, _) {
+                              final footerText =
+                                  storeProvider.storeInfo.receiptFooter;
+
+                              return Column(
                                 children: [
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: Theme.of(context).primaryColor,
-                                    size: 20,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: Theme.of(context).primaryColor,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text(
+                                        'Transaksi Berhasil',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Transaksi Berhasil',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                  if (footerText != null) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      footerText,
+                                      style: const TextStyle(fontSize: 14),
+                                      textAlign: TextAlign.center,
                                     ),
-                                  ),
+                                  ] else ...[
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Terima kasih telah berbelanja',
+                                      style: TextStyle(fontSize: 14),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
                                 ],
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Terima kasih telah berbelanja',
-                                style: TextStyle(fontSize: 14),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Barang yang sudah dibeli tidak dapat dikembalikan',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                              );
+                            },
                           ),
                         ),
                       ],
