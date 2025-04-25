@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (ctx) => StoreInfoProvider()),
       ],
       child: MaterialApp(
-        title: 'Aplikasi Kasir',
+        title: 'Kasir Sederhana',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
@@ -225,7 +225,7 @@ class _HomePageState extends State<HomePage> {
       case 3:
         return 'Daftar Barang';
       default:
-        return 'Aplikasi Kasir';
+        return 'Kasir Sederhana';
     }
   }
 

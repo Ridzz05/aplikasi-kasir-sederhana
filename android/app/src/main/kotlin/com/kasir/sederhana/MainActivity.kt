@@ -1,4 +1,4 @@
-package com.example.aplikasir
+package com.kasir.sederhana
 
 import android.os.Bundle
 import com.google.gson.GsonBuilder

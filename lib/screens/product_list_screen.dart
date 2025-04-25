@@ -507,10 +507,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  childAspectRatio: 0.65,
+                                  childAspectRatio: 0.7,
                                   crossAxisSpacing: 12,
                                   mainAxisSpacing: 12,
                                 ),
+                            padding: const EdgeInsets.only(bottom: 100),
                             itemCount: _filteredProducts.length,
                             itemBuilder: (ctx, i) {
                               final product = _filteredProducts[i];
