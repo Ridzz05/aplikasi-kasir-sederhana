@@ -6,10 +6,7 @@ class CartItem {
   int quantity;
   double get total => product.price * quantity;
 
-  CartItem({
-    required this.product,
-    this.quantity = 1,
-  });
+  CartItem({required this.product, this.quantity = 1});
 }
 
 class CartProvider with ChangeNotifier {
@@ -27,21 +24,29 @@ class CartProvider with ChangeNotifier {
     return sum;
   }
 
-  void addItem(Product product) {
+  void addItem(Product product, {int quantity = 1}) {
     if (_items.containsKey(product.id)) {
+      int currentQty = _items[product.id]!.quantity;
+      int newQty = currentQty + quantity;
+
+      if (newQty > product.stock) {
+        newQty = product.stock;
+      }
+
       _items.update(
         product.id!,
-        (existingCartItem) => CartItem(
-          product: existingCartItem.product,
-          quantity: existingCartItem.quantity + 1,
-        ),
+        (existingCartItem) =>
+            CartItem(product: existingCartItem.product, quantity: newQty),
       );
     } else {
+      int newQty = quantity;
+      if (newQty > product.stock) {
+        newQty = product.stock;
+      }
+
       _items.putIfAbsent(
         product.id!,
-        () => CartItem(
-          product: product,
-        ),
+        () => CartItem(product: product, quantity: newQty),
       );
     }
     notifyListeners();
@@ -51,10 +56,8 @@ class CartProvider with ChangeNotifier {
     if (_items.containsKey(productId) && quantity > 0) {
       _items.update(
         productId,
-        (existingCartItem) => CartItem(
-          product: existingCartItem.product,
-          quantity: quantity,
-        ),
+        (existingCartItem) =>
+            CartItem(product: existingCartItem.product, quantity: quantity),
       );
       notifyListeners();
     }
@@ -69,4 +72,4 @@ class CartProvider with ChangeNotifier {
     _items = {};
     notifyListeners();
   }
-} 
+}

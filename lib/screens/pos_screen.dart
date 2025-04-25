@@ -1124,6 +1124,63 @@ class _POSScreenState extends State<POSScreen>
                                                                     cartItem.quantity -
                                                                         1,
                                                                   );
+                                                                } else {
+                                                                  // Jika quantity menjadi 0, hapus dari keranjang
+                                                                  showDialog(
+                                                                    context:
+                                                                        context,
+                                                                    builder:
+                                                                        (
+                                                                          ctx,
+                                                                        ) => AlertDialog(
+                                                                          title: const Text(
+                                                                            'Hapus Item',
+                                                                          ),
+                                                                          content: Text(
+                                                                            'Hapus ${cartItem.product.name} dari keranjang?',
+                                                                          ),
+                                                                          actions: [
+                                                                            TextButton(
+                                                                              onPressed:
+                                                                                  () => Navigator.of(
+                                                                                    ctx,
+                                                                                  ).pop(
+                                                                                    false,
+                                                                                  ),
+                                                                              child: const Text(
+                                                                                'Batal',
+                                                                              ),
+                                                                            ),
+                                                                            TextButton(
+                                                                              onPressed: () {
+                                                                                Navigator.of(
+                                                                                  ctx,
+                                                                                ).pop(
+                                                                                  true,
+                                                                                );
+                                                                                cartProvider.removeItem(
+                                                                                  cartItem.product.id!,
+                                                                                );
+                                                                                showCustomNotification(
+                                                                                  context:
+                                                                                      context,
+                                                                                  message:
+                                                                                      '${cartItem.product.name} dihapus dari keranjang',
+                                                                                  type:
+                                                                                      NotificationType.success,
+                                                                                );
+                                                                              },
+                                                                              child: const Text(
+                                                                                'Hapus',
+                                                                                style: TextStyle(
+                                                                                  color:
+                                                                                      Colors.red,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                  );
                                                                 }
                                                               },
                                                               child: Container(
@@ -1183,18 +1240,19 @@ class _POSScreenState extends State<POSScreen>
                                                                         1,
                                                                   );
                                                                 } else {
-                                                                  ScaffoldMessenger.of(
-                                                                    context,
-                                                                  ).showSnackBar(
-                                                                    SnackBar(
-                                                                      content: Text(
+                                                                  showCustomNotification(
+                                                                    context:
+                                                                        context,
+                                                                    message:
                                                                         'Stok ${cartItem.product.name} tidak mencukupi',
-                                                                      ),
-                                                                      duration: Duration(
-                                                                        seconds:
-                                                                            2,
-                                                                      ),
-                                                                    ),
+                                                                    type:
+                                                                        NotificationType
+                                                                            .warning,
+                                                                    duration:
+                                                                        const Duration(
+                                                                          seconds:
+                                                                              2,
+                                                                        ),
                                                                   );
                                                                 }
                                                               },

@@ -75,6 +75,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Future<void> _loadProducts() async {
     if (!mounted) return;
 
+    print('Loading products...');
     setState(() {
       _isLoading = true;
     });
@@ -85,6 +86,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
         listen: false,
       );
       final products = await productProvider.loadAllProducts();
+      print('Products loaded: ${products.length}');
+
+      // Debug: Print product info
+      for (var product in products) {
+        print(
+          'Product: ${product.name}, ID: ${product.id}, Stock: ${product.stock}',
+        );
+      }
 
       if (!mounted) return;
 
@@ -93,6 +102,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      print('Error loading products: $e');
       if (!mounted) return;
 
       showCustomNotification(
@@ -135,6 +145,38 @@ class _ProductListScreenState extends State<ProductListScreen> {
     }
   }
 
+  // Debug function to add a sample product
+  Future<void> _addSampleProduct() async {
+    try {
+      final productProvider = Provider.of<CachedProductProvider>(
+        context,
+        listen: false,
+      );
+
+      final product = Product(
+        name: 'Sample Product ${DateTime.now().millisecondsSinceEpoch}',
+        price: 25000,
+        stock: 10,
+      );
+
+      await productProvider.addProduct(product);
+
+      showCustomNotification(
+        context: context,
+        message: 'Sample product added successfully!',
+        type: NotificationType.success,
+      );
+
+      _refreshProducts();
+    } catch (e) {
+      showCustomNotification(
+        context: context,
+        message: 'Error adding sample product: ${e.toString()}',
+        type: NotificationType.error,
+      );
+    }
+  }
+
   void _navigateToAddProduct() {
     if (widget.onScreenChange != null) {
       widget.onScreenChange!(1); // Index 1 adalah halaman Tambah Barang
@@ -160,7 +202,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   void _addToCart(Product product) {
+    print('Adding to cart: ${product.name}, Stock: ${product.stock}');
+
     if (product.stock <= 0) {
+      print('Cannot add to cart: Stock is zero or negative');
       showCustomNotification(
         context: context,
         message: 'Stok produk ${product.name} kosong',
@@ -170,7 +215,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
     }
 
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
-    cartProvider.addItem(product);
+    final currentItem = cartProvider.items[product.id!];
+    final currentQty = currentItem?.quantity ?? 0;
+
+    // Cek apakah menambahkan 1 item akan melebihi stok
+    if (currentQty >= product.stock) {
+      showCustomNotification(
+        context: context,
+        message: 'Stok produk ${product.name} tidak mencukupi',
+        type: NotificationType.warning,
+      );
+      return;
+    }
+
+    cartProvider.addItem(product, quantity: 1);
+    print('Product added to cart successfully');
 
     showCustomNotification(
       context: context,
@@ -189,6 +248,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final cartProvider = Provider.of<CartProvider>(context);
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Daftar Barang'),
+        actions: [
+          // Debug button
+          IconButton(
+            icon: const Icon(Icons.add_circle),
+            tooltip: 'Tambah Produk Contoh',
+            onPressed: _addSampleProduct,
+          ),
+        ],
+      ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -317,6 +387,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
               icon: const Icon(Icons.add),
               label: const Text('Tambah Barang'),
             ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _addSampleProduct,
+              icon: const Icon(Icons.bug_report),
+              label: const Text('Tambah Produk Contoh'),
+            ),
           ],
         ),
       );
@@ -428,10 +504,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   Widget _buildProductCard(Product product, BuildContext context) {
+    final cartProvider = Provider.of<CartProvider>(context);
+    final isInCart = cartProvider.items.containsKey(product.id);
+    final cartQuantity =
+        isInCart ? cartProvider.items[product.id!]!.quantity : 0;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {},
+        onTap: product.stock > 0 ? () => _addToCart(product) : null,
         borderRadius: BorderRadius.circular(12),
         child: Card(
           elevation: 3,
@@ -474,6 +555,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               ),
                             ),
                   ),
+
+                  // Stock overlay
                   product.stock <= 0
                       ? Positioned(
                         top: 0,
@@ -504,7 +587,73 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           ),
                         ),
                       )
+                      : product.stock > 0
+                      ? Positioned(
+                        bottom: 8,
+                        right: 8,
+                        child: Material(
+                          color: Colors.green,
+                          elevation: 3,
+                          shadowColor: Colors.black45,
+                          borderRadius: BorderRadius.circular(50),
+                          child: InkWell(
+                            onTap: () => _addToCart(product),
+                            borderRadius: BorderRadius.circular(50),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              child: const Icon(
+                                Icons.add_shopping_cart,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
                       : const SizedBox.shrink(),
+
+                  // Cart badge if product is in cart
+                  if (isInCart)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.shopping_cart,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$cartQuantity',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
 
@@ -598,13 +747,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () => _addToCart(product),
-                          icon: const Icon(Icons.add_shopping_cart, size: 18),
-                          label: const Text('Tambah'),
+                          icon: Icon(
+                            isInCart
+                                ? Icons.add_circle
+                                : Icons.add_shopping_cart,
+                            size: 18,
+                          ),
+                          label: Text(
+                            isInCart ? 'Tambah Lagi' : 'Tambah ke Keranjang',
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
-                                Theme.of(context).colorScheme.primary,
+                                isInCart ? Colors.orange : Colors.green,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 8),
+                            elevation: 3,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
