@@ -1061,21 +1061,47 @@ class _POSScreenState extends State<POSScreen>
                                                             BorderRadius.circular(
                                                               12,
                                                             ),
+                                                        image:
+                                                            cartItem
+                                                                        .product
+                                                                        .imageUrl !=
+                                                                    null
+                                                                ? DecorationImage(
+                                                                  image: FileImage(
+                                                                    File(
+                                                                      cartItem
+                                                                          .product
+                                                                          .imageUrl!,
+                                                                    ),
+                                                                  ),
+                                                                  fit:
+                                                                      BoxFit
+                                                                          .cover,
+                                                                )
+                                                                : null,
                                                       ),
-                                                      child: Center(
-                                                        child: Text(
-                                                          'Rp${NumberFormat("#,###").format(cartItem.product.price)}',
-                                                          style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            fontSize: 12,
-                                                            color:
-                                                                Theme.of(
-                                                                  context,
-                                                                ).primaryColor,
-                                                          ),
-                                                        ),
-                                                      ),
+                                                      child:
+                                                          cartItem
+                                                                      .product
+                                                                      .imageUrl ==
+                                                                  null
+                                                              ? Center(
+                                                                child: Text(
+                                                                  'Rp${NumberFormat("#,###").format(cartItem.product.price)}',
+                                                                  style: TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontSize:
+                                                                        12,
+                                                                    color:
+                                                                        Theme.of(
+                                                                          context,
+                                                                        ).primaryColor,
+                                                                  ),
+                                                                ),
+                                                              )
+                                                              : null,
                                                     ),
                                                     title: Text(
                                                       cartItem.product.name,

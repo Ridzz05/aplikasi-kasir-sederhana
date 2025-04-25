@@ -241,6 +241,29 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
+  // Helper untuk format harga dengan pemisah ribuan
+  String formatPrice(double price) {
+    // Konversi ke string dan hapus desimal jika berupa bilangan bulat
+    String priceStr = price.toStringAsFixed(0);
+
+    // Format dengan pemisah ribuan
+    String result = '';
+    int count = 0;
+
+    // Proses dari belakang ke depan
+    for (int i = priceStr.length - 1; i >= 0; i--) {
+      result = priceStr[i] + result;
+      count++;
+
+      // Tambahkan titik setiap 3 digit, kecuali di awal
+      if (count % 3 == 0 && i > 0) {
+        result = '.' + result;
+      }
+    }
+
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -484,7 +507,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  childAspectRatio: 0.7,
+                                  childAspectRatio: 0.65,
                                   crossAxisSpacing: 12,
                                   mainAxisSpacing: 12,
                                 ),
@@ -525,11 +548,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Product Image (1:1 ratio)
+              // Product Image (with adjusted aspect ratio)
               Stack(
                 children: [
                   AspectRatio(
-                    aspectRatio: 1,
+                    aspectRatio: 1.2, // Changed from 1.0 for shorter height
                     child:
                         product.imageUrl != null
                             ? Image.file(
@@ -659,9 +682,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
               // Product details
               Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Product name
                     Text(
@@ -670,26 +694,38 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 14,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    // Price
-                    Text(
-                      'Rp ${currencyFormatter.format(product.price)}',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                    const SizedBox(height: 4),
+                    // Price with background
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.red[100]!),
+                      ),
+                      child: Text(
+                        'Rp. ${formatPrice(product.price)}',
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    // Stock
+                    const SizedBox(height: 4),
+                    // Stock row with more compact design
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.inventory_2_outlined,
-                          size: 16,
+                          size: 14,
                           color:
                               product.stock > 0
                                   ? product.stock <= 5
@@ -697,13 +733,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                       : Theme.of(context).colorScheme.primary
                                   : Colors.red,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 2),
                         Text(
                           product.stock > 0
                               ? 'Stok: ${product.stock}'
                               : 'Stok habis',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 12,
                             color:
                                 product.stock > 0
                                     ? product.stock <= 5
@@ -717,30 +753,28 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           ),
                         ),
                         if (product.stock > 0 && product.stock <= 5)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4.0),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'Hampir habis',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.orange[800],
-                                  fontWeight: FontWeight.bold,
-                                ),
+                          Container(
+                            margin: const EdgeInsets.only(left: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: Text(
+                              'Hampir habis',
+                              style: TextStyle(
+                                fontSize: 8,
+                                color: Colors.orange[800],
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 4),
                     // Add to cart button
                     if (product.stock > 0)
                       SizedBox(
@@ -751,17 +785,19 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             isInCart
                                 ? Icons.add_circle
                                 : Icons.add_shopping_cart,
-                            size: 18,
+                            size: 16,
                           ),
                           label: Text(
-                            isInCart ? 'Tambah Lagi' : 'Tambah ke Keranjang',
+                            isInCart ? 'Tambah' : 'Ke Keranjang',
+                            style: const TextStyle(fontSize: 12),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 isInCart ? Colors.orange : Colors.green,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            elevation: 3,
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            elevation: 2,
+                            minimumSize: const Size(0, 32),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
