@@ -451,12 +451,22 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                                                         ),
                                                                       ),
                                                                       const SizedBox(height: 4),
-                                                                      Text(
-                                                                        'Tap untuk detail',
-                                                                        style: TextStyle(
-                                                                          fontSize: isSmallScreen ? 10 : 12,
-                                                                          color: Colors.grey[600],
-                                                                        ),
+                                                                      Row(
+                                                                        children: [
+                                                                          Text(
+                                                                            'Lihat Detail',
+                                                                            style: TextStyle(
+                                                                              fontSize: isSmallScreen ? 10 : 12,
+                                                                              color: Colors.grey[600],
+                                                                            ),
+                                                                          ),
+                                                                          const SizedBox(width: 4),
+                                                                          Icon(
+                                                                            Icons.arrow_forward_ios,
+                                                                            size: isSmallScreen ? 10 : 12,
+                                                                            color: Colors.grey[600],
+                                                                          ),
+                                                                        ],
                                                                       ),
                                                                     ],
                                                                   ),

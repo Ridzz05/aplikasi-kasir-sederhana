@@ -264,29 +264,57 @@ class _POSScreenState extends State<POSScreen> with SingleTickerProviderStateMix
                                     child: SlideAnimation(
                                       horizontalOffset: 50,
                                       child: FadeInAnimation(
-                                        child: Slidable(
+                                        child: Dismissible(
                                           key: ValueKey(cartItem.product.id),
-                                          endActionPane: ActionPane(
-                                            motion: const ScrollMotion(),
-                                            dismissible: DismissiblePane(
-                                              onDismissed: () {
-                                                cartProvider.removeItem(cartItem.product.id!);
-                                              }
+                                          direction: DismissDirection.endToStart,
+                                          background: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius: BorderRadius.circular(12),
                                             ),
-                                            children: [
-                                              SlidableAction(
-                                                onPressed: (context) {
-                                                  cartProvider.removeItem(cartItem.product.id!);
-                                                },
-                                                backgroundColor: Colors.red,
-                                                foregroundColor: Colors.white,
-                                                icon: Icons.delete,
-                                                label: 'Hapus',
-                                              ),
-                                            ],
+                                            alignment: Alignment.centerRight,
+                                            padding: const EdgeInsets.only(right: 16),
+                                            child: const Icon(
+                                              Icons.delete,
+                                              color: Colors.white,
+                                            ),
                                           ),
+                                          confirmDismiss: (_) async {
+                                            return await showDialog(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text('Konfirmasi Hapus'),
+                                                content: Text('Hapus ${cartItem.product.name} dari keranjang?'),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(16),
+                                                ),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    child: const Text('Batal'),
+                                                    onPressed: () => Navigator.of(ctx).pop(false),
+                                                  ),
+                                                  TextButton(
+                                                    child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                                    onPressed: () => Navigator.of(ctx).pop(true),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                          onDismissed: (_) {
+                                            cartProvider.removeItem(cartItem.product.id!);
+                                            showCustomNotification(
+                                              context: context,
+                                              message: '${cartItem.product.name} dihapus dari keranjang',
+                                              type: NotificationType.success,
+                                            );
+                                          },
                                           child: Card(
                                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            elevation: 3,
                                             child: Padding(
                                               padding: const EdgeInsets.all(12.0),
                                               child: Row(

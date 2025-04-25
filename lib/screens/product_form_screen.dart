@@ -429,73 +429,158 @@ class _ProductFormScreenState extends State<ProductFormScreen> with SingleTicker
                                     child: SlideAnimation(
                                       horizontalOffset: 50.0,
                                       child: FadeInAnimation(
-                                        child: Card(
-                                          margin: const EdgeInsets.only(bottom: 8),
-                                          child: ListTile(
-                                            contentPadding: const EdgeInsets.symmetric(
-                                              horizontal: 12, 
-                                              vertical: 4
-                                            ),
-                                            leading: Container(
-                                              width: 50,
-                                              height: 50,
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(8),
-                                                image: product.imageUrl != null
-                                                    ? DecorationImage(
-                                                        image: FileImage(File(product.imageUrl!)),
-                                                        fit: BoxFit.cover,
-                                                      )
-                                                    : null,
+                                        child: Dismissible(
+                                          key: Key(product.id.toString()),
+                                          direction: DismissDirection.endToStart,
+                                          confirmDismiss: (_) async {
+                                            // Konfirmasi hapus
+                                            return await showDialog(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text('Konfirmasi Hapus'),
+                                                content: Text('Yakin ingin menghapus ${product.name}?'),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(16),
+                                                ),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    child: const Text('Batal'),
+                                                    onPressed: () => Navigator.of(ctx).pop(false),
+                                                  ),
+                                                  TextButton(
+                                                    child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                                    onPressed: () => Navigator.of(ctx).pop(true),
+                                                  ),
+                                                ],
                                               ),
-                                              child: product.imageUrl == null
-                                                  ? const Icon(Icons.inventory, size: 24)
-                                                  : null,
+                                            );
+                                          },
+                                          onDismissed: (_) async {
+                                            // Hapus gambar jika ada
+                                            if (product.imageUrl != null) {
+                                              await ImageHelper.deleteImage(product.imageUrl);
+                                            }
+                                            
+                                            await DatabaseHelper.instance.deleteProduct(product.id!);
+                                            _fetchProducts();
+                                            
+                                            if (context.mounted) {
+                                              showCustomNotification(
+                                                context: context,
+                                                message: '${product.name} telah dihapus',
+                                                type: NotificationType.success,
+                                              );
+                                            }
+                                          },
+                                          background: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius: BorderRadius.circular(12),
                                             ),
-                                            title: Text(
-                                              product.name,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                            alignment: Alignment.centerRight,
+                                            padding: const EdgeInsets.only(right: 16),
+                                            child: const Icon(
+                                              Icons.delete,
+                                              color: Colors.white,
                                             ),
-                                            subtitle: Text(
-                                              'Rp ${product.price.toStringAsFixed(0)} · Stok: ${product.stock}',
-                                              overflow: TextOverflow.ellipsis,
+                                          ),
+                                          child: Card(
+                                            margin: const EdgeInsets.only(bottom: 8),
+                                            elevation: 3,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
                                             ),
-                                            trailing: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                IconButton(
-                                                  icon: const Icon(Icons.edit, color: Colors.blue),
-                                                  onPressed: () => _prepareEdit(product),
-                                                  visualDensity: VisualDensity.compact,
-                                                  constraints: const BoxConstraints(),
-                                                  padding: const EdgeInsets.all(8),
-                                                ),
-                                                IconButton(
-                                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                                  onPressed: () async {
-                                                    // Hapus gambar jika ada
-                                                    if (product.imageUrl != null) {
-                                                      await ImageHelper.deleteImage(product.imageUrl);
-                                                    }
+                                            child: InkWell(
+                                              onTap: () => _prepareEdit(product),
+                                              borderRadius: BorderRadius.circular(12),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(12.0),
+                                                child: Row(
+                                                  children: [
+                                                    // Gambar produk
+                                                    Container(
+                                                      width: 60,
+                                                      height: 60,
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        image: product.imageUrl != null
+                                                            ? DecorationImage(
+                                                                image: FileImage(File(product.imageUrl!)),
+                                                                fit: BoxFit.cover,
+                                                              )
+                                                            : null,
+                                                      ),
+                                                      child: product.imageUrl == null
+                                                          ? const Icon(Icons.inventory, size: 24)
+                                                          : null,
+                                                    ),
+                                                    const SizedBox(width: 16),
                                                     
-                                                    await DatabaseHelper.instance.deleteProduct(product.id!);
-                                                    _fetchProducts();
+                                                    // Info produk
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            product.name,
+                                                            style: const TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                              fontSize: 16,
+                                                            ),
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                          const SizedBox(height: 4),
+                                                          Text(
+                                                            'Rp ${product.price.toStringAsFixed(0)}',
+                                                            style: TextStyle(
+                                                              color: Theme.of(context).primaryColor,
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 4),
+                                                          Container(
+                                                            padding: const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 2,
+                                                            ),
+                                                            decoration: BoxDecoration(
+                                                              color: product.stock > 0
+                                                                  ? Colors.green.withOpacity(0.2)
+                                                                  : Colors.red.withOpacity(0.2),
+                                                              borderRadius: BorderRadius.circular(8),
+                                                            ),
+                                                            child: Text(
+                                                              'Stok: ${product.stock}',
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: product.stock > 0
+                                                                    ? Colors.green.shade700
+                                                                    : Colors.red.shade700,
+                                                                fontWeight: FontWeight.w500,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
                                                     
-                                                    if (context.mounted) {
-                                                      showCustomNotification(
-                                                        context: context,
-                                                        message: '${product.name} telah dihapus',
-                                                        type: NotificationType.success,
-                                                      );
-                                                    }
-                                                  },
-                                                  visualDensity: VisualDensity.compact,
-                                                  constraints: const BoxConstraints(),
-                                                  padding: const EdgeInsets.all(8),
+                                                    // Edit icon
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFF64B5F6).withOpacity(0.2),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      padding: const EdgeInsets.all(8),
+                                                      child: const Icon(
+                                                        Icons.edit,
+                                                        color: Color(0xFF64B5F6),
+                                                        size: 20,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
+                                              ),
                                             ),
                                           ),
                                         ),

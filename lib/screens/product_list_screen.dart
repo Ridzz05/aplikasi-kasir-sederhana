@@ -287,139 +287,137 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                       child: SlideAnimation(
                                         child: FadeInAnimation(
                                           child: Card(
-                                            elevation: 2,
+                                            elevation: 3,
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(12),
                                             ),
-                                            child: InkWell(
-                                              onTap: () => _addToCart(product),
-                                              splashColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(12),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  // Product Image (1:1 ratio)
-                                                  Stack(
-                                                    children: [
-                                                      AspectRatio(
-                                                        aspectRatio: 1,
-                                                        child: ClipRRect(
-                                                          borderRadius: const BorderRadius.only(
-                                                            topLeft: Radius.circular(12),
-                                                            topRight: Radius.circular(12),
-                                                          ),
-                                                          child: product.imageUrl != null
-                                                              ? Image.file(
-                                                                  File(product.imageUrl!),
-                                                                  fit: BoxFit.cover,
-                                                                )
-                                                              : Container(
-                                                                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                                                  child: Center(
-                                                                    child: Icon(
-                                                                      Icons.inventory_2_outlined,
-                                                                      size: 40,
-                                                                      color: Theme.of(context).primaryColor.withOpacity(0.5),
-                                                                    ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                // Product Image (1:1 ratio)
+                                                Stack(
+                                                  children: [
+                                                    AspectRatio(
+                                                      aspectRatio: 1,
+                                                      child: ClipRRect(
+                                                        borderRadius: const BorderRadius.only(
+                                                          topLeft: Radius.circular(12),
+                                                          topRight: Radius.circular(12),
+                                                        ),
+                                                        child: product.imageUrl != null
+                                                            ? Image.file(
+                                                                File(product.imageUrl!),
+                                                                fit: BoxFit.cover,
+                                                              )
+                                                            : Container(
+                                                                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                                                child: Center(
+                                                                  child: Icon(
+                                                                    Icons.inventory_2_outlined,
+                                                                    size: 40,
+                                                                    color: Theme.of(context).primaryColor.withOpacity(0.5),
                                                                   ),
                                                                 ),
+                                                              ),
+                                                      ),
+                                                    ),
+                                                    if (product.stock <= 0)
+                                                      Positioned.fill(
+                                                        child: Container(
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.black.withOpacity(0.5),
+                                                            borderRadius: const BorderRadius.only(
+                                                              topLeft: Radius.circular(12),
+                                                              topRight: Radius.circular(12),
+                                                            ),
+                                                          ),
+                                                          child: const Center(
+                                                            child: Text(
+                                                              'STOK HABIS',
+                                                              style: TextStyle(
+                                                                color: Colors.white,
+                                                                fontWeight: FontWeight.bold,
+                                                              ),
+                                                            ),
+                                                          ),
                                                         ),
                                                       ),
-                                                      if (product.stock <= 0)
-                                                        Positioned.fill(
-                                                          child: Container(
-                                                            decoration: BoxDecoration(
-                                                              color: Colors.black.withOpacity(0.5),
-                                                              borderRadius: const BorderRadius.only(
-                                                                topLeft: Radius.circular(12),
-                                                                topRight: Radius.circular(12),
-                                                              ),
-                                                            ),
-                                                            child: const Center(
-                                                              child: Text(
-                                                                'STOK HABIS',
-                                                                style: TextStyle(
-                                                                  color: Colors.white,
-                                                                  fontWeight: FontWeight.bold,
-                                                                ),
+                                                    // Add to cart quick button
+                                                    if (product.stock > 0)
+                                                      Positioned(
+                                                        bottom: 8,
+                                                        right: 8,
+                                                        child: Material(
+                                                          color: const Color(0xFF64B5F6),
+                                                          borderRadius: BorderRadius.circular(20),
+                                                          elevation: 2,
+                                                          child: InkWell(
+                                                            onTap: () => _addToCart(product),
+                                                            borderRadius: BorderRadius.circular(20),
+                                                            child: Container(
+                                                              padding: const EdgeInsets.all(8),
+                                                              child: const Icon(
+                                                                Icons.add_shopping_cart,
+                                                                color: Colors.white,
+                                                                size: 20,
                                                               ),
                                                             ),
                                                           ),
                                                         ),
-                                                    ],
-                                                  ),
-                                                  
-                                                  // Product Details
-                                                  Padding(
-                                                    padding: const EdgeInsets.all(12.0),
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Text(
-                                                          product.name,
-                                                          style: const TextStyle(
-                                                            fontWeight: FontWeight.bold,
-                                                            fontSize: 16,
-                                                          ),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                  ],
+                                                ),
+                                                
+                                                // Product Details
+                                                Padding(
+                                                  padding: const EdgeInsets.all(12.0),
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        product.name,
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 16,
                                                         ),
-                                                        const SizedBox(height: 4),
-                                                        Text(
-                                                          currencyFormatter.format(product.price),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        currencyFormatter.format(product.price),
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).primaryColor,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 2,
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          color: product.stock > 0
+                                                              ? Colors.green.withOpacity(0.2)
+                                                              : Colors.red.withOpacity(0.2),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: Text(
+                                                          'Stok: ${product.stock}',
                                                           style: TextStyle(
-                                                            color: Theme.of(context).primaryColor,
+                                                            fontSize: 12,
+                                                            color: product.stock > 0
+                                                                ? Colors.green.shade700
+                                                                : Colors.red.shade700,
                                                             fontWeight: FontWeight.w500,
                                                           ),
                                                         ),
-                                                        const SizedBox(height: 4),
-                                                        Row(
-                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                          children: [
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(
-                                                                horizontal: 8,
-                                                                vertical: 2,
-                                                              ),
-                                                              decoration: BoxDecoration(
-                                                                color: product.stock > 0
-                                                                    ? Colors.green.withOpacity(0.2)
-                                                                    : Colors.red.withOpacity(0.2),
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: Text(
-                                                                'Stok: ${product.stock}',
-                                                                style: TextStyle(
-                                                                  fontSize: 12,
-                                                                  color: product.stock > 0
-                                                                      ? Colors.green.shade700
-                                                                      : Colors.red.shade700,
-                                                                  fontWeight: FontWeight.w500,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            if (product.stock > 0)
-                                                              Container(
-                                                                decoration: BoxDecoration(
-                                                                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                                                  shape: BoxShape.circle,
-                                                                ),
-                                                                child: Padding(
-                                                                  padding: const EdgeInsets.all(4.0),
-                                                                  child: Icon(
-                                                                    Icons.add_shopping_cart,
-                                                                    color: Theme.of(context).primaryColor,
-                                                                    size: 16,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
