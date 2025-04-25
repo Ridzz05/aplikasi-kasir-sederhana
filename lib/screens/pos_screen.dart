@@ -405,25 +405,27 @@ class _POSScreenState extends State<POSScreen>
                                           size: 28,
                                         ),
                                         const SizedBox(width: 12),
-                                        const Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Non-Tunai (Debit/QRIS)',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Non-Tunai',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
                                               ),
-                                            ),
-                                            Text(
-                                              'Pembayaran dengan kartu atau e-wallet',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey,
+                                              Text(
+                                                'Debit/QRIS/E-wallet',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),
