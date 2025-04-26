@@ -39,7 +39,7 @@ flutter run
 
 ## Demo Aplikasi
 
-- **Android APK**: [https://github.com/Ridzz05/app-release.apk](https://github.com/Ridzz05/app-release.apk)
+- **Android APK**: [https://github.com/Ridzz05/app-release.apk](https://github.com/Ridzz05/aplikasi-kasir-sederhana/blob/main/app-release.apk)
 
 ## Struktur Proyek
 
