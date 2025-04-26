@@ -40,14 +40,7 @@ flutter run
 
 ## Demo Aplikasi
 
-Anda dapat mencoba aplikasi demo yang sudah dibuild tanpa perlu menginstal atau mengkompilasi kode sumber:
-
-- **Web Demo**: [https://aplikasi-kasir-sederhana.web.app](https://aplikasi-kasir-sederhana.web.app)
 - **Android APK**: [https://github.com/username/aplikasi-kasir-sederhana/releases](https://github.com/Ridzz05/aplikasi-kasir-sederhana/releases)
-
-Untuk login ke aplikasi demo, gunakan kredensial berikut:
-- Username: admin
-- Password: admin123
 
 ## Struktur Proyek
 
