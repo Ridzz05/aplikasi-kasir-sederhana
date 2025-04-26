@@ -64,11 +64,3 @@ Kontribusi selalu disambut baik! Jika Anda ingin berkontribusi:
 ## Lisensi
 
 Proyek ini dilisensikan di bawah lisensi MIT - lihat file LICENSE untuk detailnya.
-
-## Screenshot
-
-[Tambahkan screenshot aplikasi di sini]
-
-## Kontak
-
-[Tambahkan informasi kontak Anda di sini]
