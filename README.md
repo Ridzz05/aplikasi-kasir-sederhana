@@ -16,14 +16,13 @@ Aplikasi kasir ini bersifat open source, semua orang bebas melakukan edit, publi
 
 - Flutter 2.0 atau lebih tinggi
 - Dart 2.12 atau lebih tinggi
-- Perangkat Android, iOS, atau browser web
 
 ## Instalasi
 
 1. Pastikan Flutter sudah terinstal di komputer Anda
 2. Clone repositori ini:
 ```bash
-git clone https://github.com/username/aplikasi-kasir-sederhana.git
+git clone https://github.com/Ridzz05/aplikasi-kasir-sederhana.git
 ```
 3. Masuk ke direktori proyek:
 ```bash
