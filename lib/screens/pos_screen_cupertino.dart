@@ -7,6 +7,9 @@ import '../providers/cached_product_provider.dart';
 import '../providers/category_provider.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
+import '../database/database_helper.dart';
+import '../models/transaction.dart' as app_transaction;
+import '../models/transaction_item.dart';
 
 class POSScreenCupertino extends StatefulWidget {
   final Function(int)? onScreenChange;
@@ -820,25 +823,812 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
   void _processPayment() {
     if (!mounted) return;
 
-    // Implement payment processing
-    showCupertinoDialog(
+    final cart = Provider.of<CartProvider>(context, listen: false);
+
+    // Tampilkan modal pembayaran dengan layout modern
+    showCupertinoModalPopup(
       context: context,
-      builder:
-          (dialogCtx) => CupertinoAlertDialog(
-            title: const Text('Proses Pembayaran'),
-            content: const Text(
-              'Fitur pembayaran akan tersedia pada versi berikutnya.',
-            ),
-            actions: [
-              CupertinoDialogAction(
-                child: const Text('OK'),
-                onPressed: () {
-                  if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-                },
+      builder: (BuildContext modalContext) {
+        // Controller untuk input jumlah uang diterima
+        final cashController = TextEditingController();
+        // Nilai kembalian yang akan dihitung
+        double changeAmount = 0.0;
+        // Metode pembayaran yang dipilih
+        String selectedPaymentMethod = 'cash'; // Default: cash
+
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            // Hitung kembalian saat input berubah
+            void calculateChange() {
+              final cashAmount =
+                  double.tryParse(
+                    cashController.text.replaceAll(RegExp(r'[^0-9]'), ''),
+                  ) ??
+                  0.0;
+              setState(() {
+                changeAmount = cashAmount - cart.totalAmount;
+              });
+            }
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.9,
+              decoration: BoxDecoration(
+                color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemBlue,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Pembayaran',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: CupertinoColors.white,
+                              ),
+                            ),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              child: const Icon(
+                                CupertinoIcons.clear_circled_solid,
+                                color: CupertinoColors.white,
+                              ),
+                              onPressed: () => Navigator.of(modalContext).pop(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Total: ${currencyFormatter.format(cart.totalAmount)}',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: CupertinoColors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Content - Payment Methods
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Metode Pembayaran
+                            const Text(
+                              'Metode Pembayaran',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Opsi Metode Pembayaran
+                            Container(
+                              decoration: BoxDecoration(
+                                color: CupertinoColors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: CupertinoColors.systemGrey
+                                        .withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  // Cash Option
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedPaymentMethod = 'cash';
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            selectedPaymentMethod == 'cash'
+                                                ? CupertinoColors.systemBlue
+                                                    .withOpacity(0.1)
+                                                : CupertinoColors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: CupertinoColors.systemGreen
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: const Icon(
+                                              CupertinoIcons
+                                                  .money_dollar_circle,
+                                              color:
+                                                  CupertinoColors.systemGreen,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          const Expanded(
+                                            child: Text(
+                                              'Tunai',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          Icon(
+                                            selectedPaymentMethod == 'cash'
+                                                ? CupertinoIcons
+                                                    .checkmark_circle_fill
+                                                : CupertinoIcons.circle,
+                                            color:
+                                                selectedPaymentMethod == 'cash'
+                                                    ? CupertinoColors.activeBlue
+                                                    : CupertinoColors
+                                                        .systemGrey,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  // QRIS Option
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedPaymentMethod = 'qris';
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            selectedPaymentMethod == 'qris'
+                                                ? CupertinoColors.systemBlue
+                                                    .withOpacity(0.1)
+                                                : CupertinoColors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: CupertinoColors.systemBlue
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: const Icon(
+                                              CupertinoIcons.qrcode,
+                                              color: CupertinoColors.systemBlue,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          const Expanded(
+                                            child: Text(
+                                              'QRIS',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          Icon(
+                                            selectedPaymentMethod == 'qris'
+                                                ? CupertinoIcons
+                                                    .checkmark_circle_fill
+                                                : CupertinoIcons.circle,
+                                            color:
+                                                selectedPaymentMethod == 'qris'
+                                                    ? CupertinoColors.activeBlue
+                                                    : CupertinoColors
+                                                        .systemGrey,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Transfer Bank Option
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedPaymentMethod = 'transfer';
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            selectedPaymentMethod == 'transfer'
+                                                ? CupertinoColors.systemBlue
+                                                    .withOpacity(0.1)
+                                                : CupertinoColors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: CupertinoColors
+                                                  .systemIndigo
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: const Icon(
+                                              CupertinoIcons.creditcard,
+                                              color:
+                                                  CupertinoColors.systemIndigo,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          const Expanded(
+                                            child: Text(
+                                              'Transfer Bank',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          Icon(
+                                            selectedPaymentMethod == 'transfer'
+                                                ? CupertinoIcons
+                                                    .checkmark_circle_fill
+                                                : CupertinoIcons.circle,
+                                            color:
+                                                selectedPaymentMethod ==
+                                                        'transfer'
+                                                    ? CupertinoColors.activeBlue
+                                                    : CupertinoColors
+                                                        .systemGrey,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Jika pembayaran tunai, tampilkan input jumlah uang
+                            if (selectedPaymentMethod == 'cash') ...[
+                              const Text(
+                                'Uang Diterima',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              CupertinoTextField(
+                                controller: cashController,
+                                placeholder: 'Masukkan jumlah uang',
+                                keyboardType: TextInputType.number,
+                                prefix: const Padding(
+                                  padding: EdgeInsets.only(left: 12),
+                                  child: Text('Rp'),
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: CupertinoColors.systemGrey4,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.all(12),
+                                onChanged: (value) => calculateChange(),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Kembalian:',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    currencyFormatter.format(changeAmount),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color:
+                                          changeAmount >= 0
+                                              ? CupertinoColors.activeGreen
+                                              : CupertinoColors.destructiveRed,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              // Tombol Cepat
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Tombol Cepat',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  _buildQuickCashButton(
+                                    '10.000',
+                                    cashController,
+                                    calculateChange,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildQuickCashButton(
+                                    '20.000',
+                                    cashController,
+                                    calculateChange,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildQuickCashButton(
+                                    '50.000',
+                                    cashController,
+                                    calculateChange,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  _buildQuickCashButton(
+                                    '100.000',
+                                    cashController,
+                                    calculateChange,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildQuickCashButton(
+                                    'Uang Pas',
+                                    cashController,
+                                    () {
+                                      cashController.text = currencyFormatter
+                                          .format(cart.totalAmount);
+                                      calculateChange();
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+
+                            // QRIS - Tampilkan QR Code (Simulasi)
+                            if (selectedPaymentMethod == 'qris') ...[
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: CupertinoColors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: CupertinoColors.systemGrey
+                                          .withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      'Scan QRIS untuk Pembayaran',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    // Placeholder QR code
+                                    Container(
+                                      width: 200,
+                                      height: 200,
+                                      color: CupertinoColors.systemGrey6,
+                                      child: const Center(
+                                        child: Icon(
+                                          CupertinoIcons.qrcode,
+                                          size: 100,
+                                          color: CupertinoColors.systemGrey,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Total: ${currencyFormatter.format(cart.totalAmount)}',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Silakan scan kode QR di atas menggunakan aplikasi e-wallet atau mobile banking Anda',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: CupertinoColors.systemGrey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+
+                            // Transfer Bank
+                            if (selectedPaymentMethod == 'transfer') ...[
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: CupertinoColors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: CupertinoColors.systemGrey
+                                          .withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Transfer ke Rekening Berikut:',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    _buildBankDetail(
+                                      'Bank BCA',
+                                      '1234567890',
+                                      'Toko Saya',
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _buildBankDetail(
+                                      'Bank Mandiri',
+                                      '0987654321',
+                                      'Toko Saya',
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    Text(
+                                      'Total: ${currencyFormatter.format(cart.totalAmount)}',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Silakan transfer sesuai jumlah di atas dan konfirmasi pembayaran setelah transfer.',
+                                      style: TextStyle(
+                                        color: CupertinoColors.systemGrey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Footer
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoColors.systemGrey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () => Navigator.of(modalContext).pop(),
+                              child: const Text('Batal'),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: CupertinoButton.filled(
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                bool canProceed = true;
+
+                                // Validasi berdasarkan metode pembayaran
+                                if (selectedPaymentMethod == 'cash') {
+                                  final cashAmount =
+                                      double.tryParse(
+                                        cashController.text.replaceAll(
+                                          RegExp(r'[^0-9]'),
+                                          '',
+                                        ),
+                                      ) ??
+                                      0.0;
+                                  canProceed = cashAmount >= cart.totalAmount;
+                                }
+
+                                if (canProceed) {
+                                  // Tutup modal pembayaran
+                                  Navigator.of(modalContext).pop();
+
+                                  // Proses transaksi
+                                  _completeTransaction(selectedPaymentMethod);
+                                } else {
+                                  // Tampilkan pesan jika uang tidak cukup
+                                  showCupertinoDialog(
+                                    context: context,
+                                    builder:
+                                        (ctx) => CupertinoAlertDialog(
+                                          title: const Text('Uang Tidak Cukup'),
+                                          content: const Text(
+                                            'Jumlah uang yang dimasukkan kurang dari total pembayaran.',
+                                          ),
+                                          actions: [
+                                            CupertinoDialogAction(
+                                              child: const Text('OK'),
+                                              onPressed:
+                                                  () => Navigator.pop(ctx),
+                                            ),
+                                          ],
+                                        ),
+                                  );
+                                }
+                              },
+                              child: const Text('Proses Pembayaran'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Widget untuk tombol cepat pilihan uang tunai
+  Widget _buildQuickCashButton(
+    String amount,
+    TextEditingController controller,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          controller.text = amount;
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: CupertinoColors.systemGrey6,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: CupertinoColors.systemGrey4),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            amount,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Widget untuk detail rekening bank
+  Widget _buildBankDetail(
+    String bankName,
+    String accountNumber,
+    String accountName,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: CupertinoColors.systemIndigo.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            CupertinoIcons.creditcard,
+            color: CupertinoColors.systemIndigo,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                bankName,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              Text(
+                '$accountNumber - $accountName',
+                style: const TextStyle(color: CupertinoColors.systemGrey),
               ),
             ],
           ),
+        ),
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            // Copy to clipboard functionality would go here
+          },
+          child: const Text('Salin'),
+        ),
+      ],
     );
+  }
+
+  // Proses menyelesaikan transaksi
+  void _completeTransaction(String paymentMethod) async {
+    if (!mounted) return;
+
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final productProvider = Provider.of<CachedProductProvider>(
+      context,
+      listen: false,
+    );
+
+    try {
+      // Buat objek transaksi
+      final transaction = app_transaction.Transaction(
+        date: DateTime.now(),
+        totalAmount: cart.totalAmount,
+        paymentMethod: _getPaymentMethodName(paymentMethod),
+      );
+
+      // Buat list item transaksi
+      final transactionItems =
+          cart.items.values.map((cartItem) {
+            return TransactionItem(
+              transactionId: 0, // Ini akan diisi oleh database saat menyimpan
+              productId: cartItem.productId,
+              productName: cartItem.title,
+              productPrice: cartItem.price,
+              quantity: cartItem.quantity,
+              total: cartItem.price * cartItem.quantity,
+            );
+          }).toList();
+
+      // Buat list untuk update stok
+      final stockUpdates =
+          cart.items.values.map((cartItem) {
+            return {cartItem.productId: cartItem.quantity};
+          }).toList();
+
+      // Simpan ke database
+      final transactionId = await DatabaseHelper.instance.createFullTransaction(
+        transaction,
+        transactionItems,
+        stockUpdates,
+      );
+
+      // Refresh data produk setelah update stok
+      await productProvider.loadAllProducts(forceRefresh: true);
+
+      // Tampilkan pesan sukses
+      if (mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder:
+              (BuildContext ctx) => CupertinoAlertDialog(
+                title: const Text('Transaksi Berhasil'),
+                content: Column(
+                  children: [
+                    const Text('Pembayaran telah berhasil diproses.'),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Total: ${currencyFormatter.format(cart.totalAmount)}',
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Metode: ${_getPaymentMethodName(paymentMethod)}'),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No. Transaksi: #${transactionId.toString().padLeft(4, '0')}',
+                    ),
+                  ],
+                ),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text('Cetak Struk'),
+                    onPressed: () {
+                      // Handle print receipt
+                      Navigator.pop(ctx);
+                      // Reset cart
+                      cart.clear();
+                    },
+                  ),
+                  CupertinoDialogAction(
+                    child: const Text('Selesai'),
+                    isDefaultAction: true,
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      // Reset cart
+                      cart.clear();
+                    },
+                  ),
+                ],
+              ),
+        );
+      }
+    } catch (e) {
+      print('Error saat menyimpan transaksi: $e');
+      if (mounted) {
+        _showErrorDialog('Gagal menyimpan transaksi: $e');
+      }
+    }
+  }
+
+  // Helper untuk mendapatkan nama metode pembayaran
+  String _getPaymentMethodName(String method) {
+    switch (method) {
+      case 'cash':
+        return 'Tunai';
+      case 'qris':
+        return 'QRIS';
+      case 'transfer':
+        return 'Transfer Bank';
+      default:
+        return method;
+    }
   }
 
   void _showErrorDialog(String message, [BuildContext? ctx]) {
