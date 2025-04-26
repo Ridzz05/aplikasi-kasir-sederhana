@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'providers/cart_provider.dart';
 import 'providers/page_controller_provider.dart';
 import 'providers/cached_product_provider.dart';
@@ -65,7 +64,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late List<Widget> _screens;
   int _selectedIndex = 0;
-  final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
 
   @override
   void initState() {
@@ -135,68 +133,54 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Definisikan warna untuk background dan navigasi
-    final backgroundColor = const Color(0xFFF5F5F5);
+    // Warna tema
     final activeColor = const Color(0xFF1976D2); // Material Blue 700
 
-    // Item navigasi dengan icon yang lebih konsisten
-    final items = <Widget>[
-      // Icon Kasir - Shopping Cart
-      const Icon(CupertinoIcons.cart_fill, size: 26, color: Colors.white),
-      // Icon Riwayat - History/Time
-      const Icon(CupertinoIcons.clock_fill, size: 26, color: Colors.white),
-      // Icon Tambah - di tengah
-      const Icon(CupertinoIcons.add, size: 30, color: Colors.white),
-      // Icon Barang - Box/Product
-      const Icon(CupertinoIcons.cube_fill, size: 26, color: Colors.white),
-      // Icon Kategori - Kategori
-      const Icon(
-        CupertinoIcons.square_grid_2x2_fill,
-        size: 26,
-        color: Colors.white,
-      ),
-    ];
-
-    // Definisikan padding bawah untuk semua halaman
-    const bottomNavPadding = 70.0; // Mengakomodasi CurvedNavigationBar
-
-    // Wrap setiap screen dengan padding
-    final wrappedScreens =
-        _screens.map((screen) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: bottomNavPadding),
-            child: screen,
-          );
-        }).toList();
-
-    return CupertinoPageScaffold(
-      child: SafeArea(
-        bottom:
-            false, // Jangan gunakan safe area di bawah karena kita menangani sendiri
-        child: Scaffold(
-          extendBody: true, // Penting agar body extend ke bawah navbar
-          backgroundColor: backgroundColor,
-          body: wrappedScreens[_selectedIndex],
-          bottomNavigationBar: Theme(
-            data: Theme.of(
-              context,
-            ).copyWith(iconTheme: const IconThemeData(color: Colors.white)),
-            child: CurvedNavigationBar(
-              key: _bottomNavigationKey,
-              index: _selectedIndex,
-              height: 60.0,
-              items: items,
-              color: activeColor.withOpacity(0.8),
-              buttonBackgroundColor: activeColor,
-              backgroundColor: Colors.transparent,
-              animationCurve: Curves.easeInOut,
-              animationDuration: const Duration(milliseconds: 300),
-              onTap: _navigateToScreen,
-              letIndexChange: (index) => true,
-            ),
+    return CupertinoTabScaffold(
+      tabBar: CupertinoTabBar(
+        currentIndex: _selectedIndex,
+        onTap: _navigateToScreen,
+        activeColor: activeColor,
+        items: const [
+          // Icon Kasir - Shopping Cart
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.cart),
+            activeIcon: Icon(CupertinoIcons.cart_fill),
+            label: 'Kasir',
           ),
-        ),
+          // Icon Riwayat - History/Time
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.clock),
+            activeIcon: Icon(CupertinoIcons.clock_fill),
+            label: 'Riwayat',
+          ),
+          // Icon Tambah - di tengah
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.add_circled),
+            activeIcon: Icon(CupertinoIcons.add_circled_solid),
+            label: 'Tambah',
+          ),
+          // Icon Barang - Box/Product
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.cube),
+            activeIcon: Icon(CupertinoIcons.cube_fill),
+            label: 'Produk',
+          ),
+          // Icon Kategori - Kategori
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.square_grid_2x2),
+            activeIcon: Icon(CupertinoIcons.square_grid_2x2_fill),
+            label: 'Kategori',
+          ),
+        ],
       ),
+      tabBuilder: (context, index) {
+        return CupertinoTabView(
+          builder: (context) {
+            return _screens[_selectedIndex];
+          },
+        );
+      },
     );
   }
 }
