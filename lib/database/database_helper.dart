@@ -755,4 +755,9 @@ class DatabaseHelper {
 
     return result;
   }
+
+  // Get all transactions adalah alias untuk getAllTransactions
+  Future<List<app_transaction.Transaction>> getTransactions() async {
+    return getAllTransactions();
+  }
 }

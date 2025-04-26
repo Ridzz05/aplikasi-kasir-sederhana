@@ -1,13 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../models/product.dart';
-
-class CartItem {
-  final Product product;
-  int quantity;
-  double get total => product.price * quantity;
-
-  CartItem({required this.product, this.quantity = 1});
-}
+import '../models/cart_item.dart';
 
 class CartProvider with ChangeNotifier {
   Map<int, CartItem> _items = {};
@@ -16,51 +8,72 @@ class CartProvider with ChangeNotifier {
 
   int get itemCount => _items.length;
 
+  int get totalItems {
+    int count = 0;
+    _items.forEach((key, cartItem) {
+      count += cartItem.quantity;
+    });
+    return count;
+  }
+
   double get totalAmount {
     double sum = 0.0;
     _items.forEach((key, cartItem) {
-      sum += cartItem.total;
+      sum += cartItem.price * cartItem.quantity;
     });
     return sum;
   }
 
-  void addItem(Product product, {int quantity = 1}) {
-    if (_items.containsKey(product.id)) {
-      int currentQty = _items[product.id]!.quantity;
-      int newQty = currentQty + quantity;
-
-      if (newQty > product.stock) {
-        newQty = product.stock;
-      }
-
+  void addItem(int productId, String title, double price, String? imageUrl) {
+    if (_items.containsKey(productId)) {
+      // Update existing item
       _items.update(
-        product.id!,
-        (existingCartItem) =>
-            CartItem(product: existingCartItem.product, quantity: newQty),
+        productId,
+        (existingCartItem) => CartItem(
+          productId: productId,
+          title: title,
+          quantity: existingCartItem.quantity + 1,
+          price: price,
+          imageUrl: imageUrl,
+        ),
       );
     } else {
-      int newQty = quantity;
-      if (newQty > product.stock) {
-        newQty = product.stock;
-      }
-
+      // Add new item
       _items.putIfAbsent(
-        product.id!,
-        () => CartItem(product: product, quantity: newQty),
+        productId,
+        () => CartItem(
+          productId: productId,
+          title: title,
+          quantity: 1,
+          price: price,
+          imageUrl: imageUrl,
+        ),
       );
     }
     notifyListeners();
   }
 
-  void updateItemQuantity(int productId, int quantity) {
-    if (_items.containsKey(productId) && quantity > 0) {
+  void removeSingleItem(int productId) {
+    if (!_items.containsKey(productId)) {
+      return;
+    }
+
+    if (_items[productId]!.quantity > 1) {
       _items.update(
         productId,
-        (existingCartItem) =>
-            CartItem(product: existingCartItem.product, quantity: quantity),
+        (existingCartItem) => CartItem(
+          productId: productId,
+          title: existingCartItem.title,
+          quantity: existingCartItem.quantity - 1,
+          price: existingCartItem.price,
+          imageUrl: existingCartItem.imageUrl,
+        ),
       );
-      notifyListeners();
+    } else {
+      _items.remove(productId);
     }
+
+    notifyListeners();
   }
 
   void removeItem(int productId) {

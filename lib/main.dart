@@ -1,41 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'providers/cart_provider.dart';
 import 'providers/page_controller_provider.dart';
 import 'providers/cached_product_provider.dart';
 import 'providers/store_info_provider.dart';
 import 'providers/category_provider.dart';
-import 'screens/product_form_screen.dart';
-import 'screens/pos_screen.dart';
-import 'screens/transaction_history_screen.dart';
-import 'screens/product_list_screen.dart';
-import 'screens/category_screen.dart';
-import 'widgets/custom_notification.dart';
-import 'database/database_helper.dart';
-import 'screens/store_settings_screen.dart';
+import 'screens/pos_screen_cupertino.dart';
+import 'screens/product_form_screen_cupertino.dart';
+import 'screens/transaction_history_screen_cupertino.dart';
+import 'screens/product_list_screen_cupertino.dart';
+import 'screens/category_screen_cupertino.dart';
+import 'screens/store_settings_screen_cupertino.dart';
 
 void main() {
-  // Optimasi startup
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Set orientasi optimal untuk aplikasi kasir
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  // Set system UI overlay style
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF64B5F6),
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
-
   runApp(const MyApp());
 }
 
@@ -44,9 +26,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Pra-cache font untuk menghindari jank saat runtime
-    final textTheme = GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme);
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (ctx) => CartProvider()),
@@ -55,77 +34,21 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (ctx) => StoreInfoProvider()),
         ChangeNotifierProvider(create: (ctx) => CategoryProvider()),
       ],
-      child: MaterialApp(
+      child: CupertinoApp(
         title: 'Kasir Sederhana',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFF64B5F6),
-            secondary: Color(0xFFFF9800),
-            surface: Colors.white,
-            background: Color(0xFFF5F5F5),
-            error: Color(0xFFB00020),
-          ),
-          scaffoldBackgroundColor: const Color(0xFFF5F5F5),
-          textTheme: textTheme,
-          // Optimasi performa dengan meminimalkan properti yang tidak diperlukan
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF64B5F6),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 16),
+        theme: const CupertinoThemeData(
+          primaryColor: Color(0xFF64B5F6),
+          brightness: Brightness.light,
+          scaffoldBackgroundColor: Color(0xFFF5F5F5),
+          textTheme: CupertinoTextThemeData(
+            primaryColor: Color(0xFF64B5F6),
+            textStyle: TextStyle(
+              fontFamily: 'Poppins',
+              color: CupertinoColors.black,
             ),
-          ),
-          cardTheme: const CardTheme(
-            elevation: 1, // Kurangi elevasi untuk performa
-            clipBehavior: Clip.hardEdge, // Lebih cepat dari antiAlias
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(12)),
-            ),
-          ),
-          appBarTheme: AppBarTheme(
-            backgroundColor: const Color(0xFF64B5F6),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            centerTitle: true,
-            titleTextStyle: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: Colors.grey[100],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF6C5CE7), width: 2),
-            ),
-            contentPadding: const EdgeInsets.all(16),
-            labelStyle: TextStyle(color: Colors.grey[700]),
           ),
         ),
-        // Batasi framerate untuk menghemat baterai jika diperlukan
-        // builder: (context, child) {
-        //   return MediaQuery(
-        //     data: MediaQuery.of(context).copyWith(
-        //       textScaleFactor: 1.0, // Menghindari perubahan ukuran teks sistem
-        //     ),
-        //     child: child!,
-        //   );
-        // },
         home: const HomePage(),
       ),
     );
@@ -142,6 +65,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late List<Widget> _screens;
   int _selectedIndex = 0;
+  final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
 
   @override
   void initState() {
@@ -150,23 +74,49 @@ class _HomePageState extends State<HomePage> {
     _initializeProviders();
   }
 
-  void _initializeProviders() {
-    // Initialize store info
-    Future.delayed(Duration.zero, () {
-      Provider.of<StoreInfoProvider>(
+  Future<void> _initializeProviders() async {
+    // Gunakan try-catch untuk menangani error saat inisialisasi
+    try {
+      final storeInfoProvider = Provider.of<StoreInfoProvider>(
         context,
         listen: false,
-      ).initializeStoreInfo();
-    });
+      );
+
+      final categoryProvider = Provider.of<CategoryProvider>(
+        context,
+        listen: false,
+      );
+
+      final productProvider = Provider.of<CachedProductProvider>(
+        context,
+        listen: false,
+      );
+
+      // Load data secara asynchronous
+      await storeInfoProvider.initializeStoreInfo();
+      await categoryProvider.loadCategories();
+      await productProvider.loadAllProducts();
+    } catch (e) {
+      print('Error initializing providers: $e');
+      // Jangan throw error, biarkan aplikasi tetap berjalan
+    }
   }
 
   void _initializeScreens() {
+    // Urutan layar sesuai dengan indeks tab:
+    // 0: Kasir (POS)
+    // 1: Riwayat Transaksi
+    // 2: Tambah Produk (di tengah)
+    // 3: Daftar Produk
+    // 4: Kategori
     _screens = [
-      POSScreen(onScreenChange: _navigateToScreen),
-      ProductFormScreen(onScreenChange: _navigateToScreen),
-      TransactionHistoryScreen(onScreenChange: _navigateToScreen),
-      ProductListScreen(onScreenChange: _navigateToScreen),
-      CategoryScreen(onScreenChange: _navigateToScreen),
+      POSScreenCupertino(onScreenChange: _navigateToScreen), // Tab 0
+      TransactionHistoryScreenCupertino(
+        onScreenChange: _navigateToScreen,
+      ), // Tab 1
+      ProductFormScreenCupertino(onScreenChange: _navigateToScreen), // Tab 2
+      ProductListScreenCupertino(onScreenChange: _navigateToScreen), // Tab 3
+      CategoryScreenCupertino(onScreenChange: _navigateToScreen), // Tab 4
     ];
   }
 
@@ -174,325 +124,79 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedIndex = index;
     });
+
     final pageProvider = Provider.of<PageControllerProvider>(
       context,
       listen: false,
     );
+
     pageProvider.setPage(index);
   }
 
   @override
   Widget build(BuildContext context) {
-    final pageProvider = Provider.of<PageControllerProvider>(context);
+    // Definisikan warna untuk background dan navigasi
+    final backgroundColor = const Color(0xFFF5F5F5);
+    final activeColor = const Color(0xFF1976D2); // Material Blue 700
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_getTitleForPage(_selectedIndex)),
-        actions: [
-          ..._getActionsForPage(_selectedIndex) ?? [],
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => _showSettingsDialog(context),
-          ),
-        ],
+    // Item navigasi dengan icon yang lebih konsisten
+    final items = <Widget>[
+      // Icon Kasir - Shopping Cart
+      const Icon(CupertinoIcons.cart_fill, size: 26, color: Colors.white),
+      // Icon Riwayat - History/Time
+      const Icon(CupertinoIcons.clock_fill, size: 26, color: Colors.white),
+      // Icon Tambah - di tengah
+      const Icon(CupertinoIcons.add, size: 30, color: Colors.white),
+      // Icon Barang - Box/Product
+      const Icon(CupertinoIcons.cube_fill, size: 26, color: Colors.white),
+      // Icon Kategori - Kategori
+      const Icon(
+        CupertinoIcons.square_grid_2x2_fill,
+        size: 26,
+        color: Colors.white,
       ),
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.point_of_sale),
-            label: 'Kasir',
+    ];
+
+    // Definisikan padding bawah untuk semua halaman
+    const bottomNavPadding = 70.0; // Mengakomodasi CurvedNavigationBar
+
+    // Wrap setiap screen dengan padding
+    final wrappedScreens =
+        _screens.map((screen) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: bottomNavPadding),
+            child: screen,
+          );
+        }).toList();
+
+    return CupertinoPageScaffold(
+      child: SafeArea(
+        bottom:
+            false, // Jangan gunakan safe area di bawah karena kita menangani sendiri
+        child: Scaffold(
+          extendBody: true, // Penting agar body extend ke bawah navbar
+          backgroundColor: backgroundColor,
+          body: wrappedScreens[_selectedIndex],
+          bottomNavigationBar: Theme(
+            data: Theme.of(
+              context,
+            ).copyWith(iconTheme: const IconThemeData(color: Colors.white)),
+            child: CurvedNavigationBar(
+              key: _bottomNavigationKey,
+              index: _selectedIndex,
+              height: 60.0,
+              items: items,
+              color: activeColor.withOpacity(0.8),
+              buttonBackgroundColor: activeColor,
+              backgroundColor: Colors.transparent,
+              animationCurve: Curves.easeInOut,
+              animationDuration: const Duration(milliseconds: 300),
+              onTap: _navigateToScreen,
+              letIndexChange: (index) => true,
+            ),
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.add_box), label: 'Tambah'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Riwayat'),
-          BottomNavigationBarItem(icon: Icon(Icons.inventory), label: 'Barang'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.category),
-            label: 'Kategori',
-          ),
-        ],
-        onTap: (index) {
-          _navigateToScreen(index);
-        },
+        ),
       ),
-    );
-  }
-
-  String _getTitleForPage(int index) {
-    switch (index) {
-      case 0:
-        return 'Kasir';
-      case 1:
-        return 'Tambah Barang';
-      case 2:
-        return 'Riwayat Transaksi';
-      case 3:
-        return 'Daftar Barang';
-      case 4:
-        return 'Kategori';
-      default:
-        return 'Kasir Sederhana';
-    }
-  }
-
-  List<Widget>? _getActionsForPage(int index) {
-    final pageProvider = Provider.of<PageControllerProvider>(
-      context,
-      listen: false,
-    );
-
-    switch (index) {
-      case 0: // Kasir screen
-        final storeProvider = Provider.of<StoreInfoProvider>(context);
-        return [
-          IconButton(
-            icon: const Icon(Icons.store),
-            tooltip: 'Pengaturan Toko',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const StoreSettingsScreen(),
-                ),
-              );
-            },
-          ),
-        ];
-
-      case 1: // Product Form screen
-        final isEditing = false; // This would need to be maintained somewhere
-        return isEditing
-            ? [
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  // Reset product form
-                },
-              ),
-            ]
-            : null;
-
-      case 2: // Transaction History screen
-        final bool showChart =
-            false; // This would need to be maintained somewhere
-        return [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // Refresh transactions
-            },
-          ),
-          IconButton(
-            icon: Icon(showChart ? Icons.list : Icons.bar_chart),
-            onPressed: () {
-              // Toggle chart view
-            },
-          ),
-        ];
-
-      case 3: // Product List screen
-        final cartProvider = Provider.of<CartProvider>(context, listen: false);
-        return [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // Refresh products
-            },
-          ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.shopping_cart),
-                onPressed: () {
-                  // Navigate to cart
-                  _navigateToScreen(0); // Index 0 is POS/Kasir screen
-                },
-                tooltip: 'Lihat Keranjang',
-              ),
-              if (cartProvider.itemCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      '${cartProvider.itemCount}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ];
-
-      default:
-        return null;
-    }
-  }
-
-  void _showSettingsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Pengaturan'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.store, color: Colors.blue),
-                  title: const Text('Pengaturan Toko'),
-                  subtitle: const Text('Ubah nama toko, alamat, dan lainnya'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const StoreSettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.delete_forever, color: Colors.red),
-                  title: const Text('Reset Database'),
-                  subtitle: const Text(
-                    'Hapus semua data (transaksi, barang, dll)',
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showResetDatabaseConfirmation(context);
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.info),
-                  title: const Text('Versi Aplikasi'),
-                  subtitle: const Text('1.0.0'),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Tutup'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _showResetDatabaseConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Reset Database'),
-            content: const Text(
-              'Tindakan ini akan menghapus SEMUA data, termasuk barang, '
-              'transaksi, dan pengaturan. Data yang terhapus tidak dapat dikembalikan.\n\n'
-              'Yakin ingin melanjutkan?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Batal'),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                onPressed: () async {
-                  Navigator.of(context).pop();
-
-                  // Show loading indicator
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (BuildContext context) {
-                      return const AlertDialog(
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
-                            Text('Mereset database...'),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-
-                  try {
-                    final bool success =
-                        await DatabaseHelper.instance.resetDatabase();
-
-                    // Close loading dialog
-                    Navigator.of(context).pop();
-
-                    if (success) {
-                      showCustomNotification(
-                        context: context,
-                        message: 'Database berhasil direset',
-                        type: NotificationType.success,
-                      );
-
-                      // Clear the cart
-                      final cartProvider = Provider.of<CartProvider>(
-                        context,
-                        listen: false,
-                      );
-                      cartProvider.clear();
-
-                      // Reset cached products
-                      final productProvider =
-                          Provider.of<CachedProductProvider>(
-                            context,
-                            listen: false,
-                          );
-                      await productProvider.loadAllProducts(forceRefresh: true);
-
-                      // Navigate to POS screen
-                      _navigateToScreen(0);
-                    } else {
-                      showCustomNotification(
-                        context: context,
-                        message: 'Gagal mereset database',
-                        type: NotificationType.error,
-                      );
-                    }
-                  } catch (e) {
-                    // Close loading dialog
-                    Navigator.of(context).pop();
-
-                    showCustomNotification(
-                      context: context,
-                      message: 'Error: ${e.toString()}',
-                      type: NotificationType.error,
-                    );
-                  }
-                },
-                child: const Text('Reset Database'),
-              ),
-            ],
-          ),
     );
   }
 }

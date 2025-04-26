@@ -9,18 +9,39 @@ class CategoryProvider extends ChangeNotifier {
   List<Category> get categories => _categories;
   bool get isLoading => _isLoading;
 
-  Future<void> loadCategories() async {
+  // Default category jika tidak ditemukan
+  Category get defaultCategory => Category(id: 0, name: 'Tidak terkategori');
+
+  Future<List<Category>> loadCategories() async {
     _isLoading = true;
     notifyListeners();
 
     try {
       _categories = await DatabaseHelper.instance.getAllCategories();
+
+      // Pastikan daftar kategori tidak null
+      if (_categories.isEmpty) {
+        // Tambahkan kategori default jika tidak ada kategori tersedia
+        final defaultCategory = Category(id: 0, name: 'Tidak terkategori');
+        _categories = [defaultCategory];
+
+        // Tambahkan ke database juga
+        try {
+          await DatabaseHelper.instance.insertCategory(defaultCategory);
+        } catch (e) {
+          print('Error adding default category: $e');
+        }
+      }
     } catch (e) {
       print('Error loading categories: $e');
+      // Gunakan kategori default jika terjadi error
+      _categories = [Category(id: 0, name: 'Tidak terkategori')];
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+
+    return _categories;
   }
 
   Future<bool> addCategory(Category category) async {

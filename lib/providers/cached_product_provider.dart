@@ -15,6 +15,9 @@ class CachedProductProvider with ChangeNotifier {
   List<Product>? get allProducts => _allProductsCache;
   bool get isLoading => _isLoading;
 
+  // Getter untuk daftar produk
+  List<Product> get products => _allProductsCache ?? [];
+
   // Verifikasi apakah cache masih valid
   bool _isCacheValid() {
     if (_lastProductFetch == null) return false;
