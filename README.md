@@ -1,6 +1,6 @@
 # Aplikasi Kasir Sederhana
 
-Aplikasi kasir ini bersifat open source, semua orang bebas melakukan edit, publish dan bahkan merilisnya sebagai aplikasi komersial. Aplikasi ini dibuat menggunakan Flutter dan SQLite untuk manajemen database lokal.
+Aplikasi kasir ini bersifat open source, semua orang bebas melakukan edit, publish dan bahkan merilisnya sebagai aplikasi komersial. Aplikasi ini dibuat menggunakan Flutter dan SQLite untuk manajemen database lokal. dan yang terpenting aplikasinya full offline
 
 ## Fitur
 
