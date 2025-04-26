@@ -6,10 +6,12 @@ import 'providers/cart_provider.dart';
 import 'providers/page_controller_provider.dart';
 import 'providers/cached_product_provider.dart';
 import 'providers/store_info_provider.dart';
+import 'providers/category_provider.dart';
 import 'screens/product_form_screen.dart';
 import 'screens/pos_screen.dart';
 import 'screens/transaction_history_screen.dart';
 import 'screens/product_list_screen.dart';
+import 'screens/category_screen.dart';
 import 'widgets/custom_notification.dart';
 import 'database/database_helper.dart';
 import 'screens/store_settings_screen.dart';
@@ -51,6 +53,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (ctx) => PageControllerProvider()),
         ChangeNotifierProvider(create: (ctx) => CachedProductProvider()),
         ChangeNotifierProvider(create: (ctx) => StoreInfoProvider()),
+        ChangeNotifierProvider(create: (ctx) => CategoryProvider()),
       ],
       child: MaterialApp(
         title: 'Kasir Sederhana',
@@ -163,6 +166,7 @@ class _HomePageState extends State<HomePage> {
       ProductFormScreen(onScreenChange: _navigateToScreen),
       TransactionHistoryScreen(onScreenChange: _navigateToScreen),
       ProductListScreen(onScreenChange: _navigateToScreen),
+      CategoryScreen(onScreenChange: _navigateToScreen),
     ];
   }
 
@@ -206,6 +210,10 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.add_box), label: 'Tambah'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Riwayat'),
           BottomNavigationBarItem(icon: Icon(Icons.inventory), label: 'Barang'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.category),
+            label: 'Kategori',
+          ),
         ],
         onTap: (index) {
           _navigateToScreen(index);
@@ -224,6 +232,8 @@ class _HomePageState extends State<HomePage> {
         return 'Riwayat Transaksi';
       case 3:
         return 'Daftar Barang';
+      case 4:
+        return 'Kategori';
       default:
         return 'Kasir Sederhana';
     }

@@ -5,8 +5,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:lottie/lottie.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../database/database_helper.dart';
 import '../models/product.dart';
+import '../models/category.dart';
+import '../providers/category_provider.dart';
 import '../utils/image_helper.dart';
 import '../widgets/custom_notification.dart';
 
@@ -24,10 +27,16 @@ class _ProductFormScreenState extends State<ProductFormScreen>
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
+  final _descriptionController =
+      TextEditingController(); // New field for product description
 
   late AnimationController _animationController;
   bool _isLoading = false;
   List<Product> _products = [];
+  List<Category> _categories = [];
+
+  Category? _selectedCategory;
+  int? _selectedCategoryId;
 
   Product? _editingProduct;
   bool _isEditing = false;
@@ -46,6 +55,7 @@ class _ProductFormScreenState extends State<ProductFormScreen>
       duration: const Duration(milliseconds: 300),
     );
     _fetchProducts();
+    _loadCategories();
     print("ProductFormScreen initialized");
   }
 
@@ -54,8 +64,20 @@ class _ProductFormScreenState extends State<ProductFormScreen>
     _nameController.dispose();
     _priceController.dispose();
     _stockController.dispose();
+    _descriptionController.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await DatabaseHelper.instance.getAllCategories();
+      setState(() {
+        _categories = categories;
+      });
+    } catch (e) {
+      _showErrorSnackBar('Gagal memuat kategori: ${e.toString()}');
+    }
   }
 
   Future<void> _fetchProducts() async {
@@ -81,10 +103,13 @@ class _ProductFormScreenState extends State<ProductFormScreen>
     _nameController.clear();
     _priceController.clear();
     _stockController.clear();
+    _descriptionController.clear();
     setState(() {
       _isEditing = false;
       _editingProduct = null;
       _selectedImagePath = null;
+      _selectedCategory = null;
+      _selectedCategoryId = null;
     });
   }
 
@@ -96,7 +121,7 @@ class _ProductFormScreenState extends State<ProductFormScreen>
     );
   }
 
-  void _prepareEdit(Product product) {
+  void _prepareEdit(Product product) async {
     setState(() {
       _isEditing = true;
       _editingProduct = product;
@@ -104,7 +129,24 @@ class _ProductFormScreenState extends State<ProductFormScreen>
       _priceController.text = product.price.toString();
       _stockController.text = product.stock.toString();
       _selectedImagePath = product.imageUrl;
+      _selectedCategoryId = product.categoryId;
     });
+
+    // Load the category if product has one
+    if (product.categoryId != null) {
+      try {
+        final category = await DatabaseHelper.instance.getCategory(
+          product.categoryId!,
+        );
+        if (category != null) {
+          setState(() {
+            _selectedCategory = category;
+          });
+        }
+      } catch (e) {
+        print('Error loading category: $e');
+      }
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -182,6 +224,189 @@ class _ProductFormScreenState extends State<ProductFormScreen>
     );
   }
 
+  void _showCategorySelectionModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            top: 20,
+            left: 16,
+            right: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              // Title
+              const Text(
+                'Pilih Kategori',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              // Search field - optional
+              if (_categories.length > 5)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Cari kategori...',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      // Implement search logic if needed
+                    },
+                  ),
+                ),
+              const SizedBox(height: 10),
+              // Categories list
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.4,
+                ),
+                child:
+                    _categories.isEmpty
+                        ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.category_outlined,
+                                size: 48,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text('Belum ada kategori'),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  // Navigate to category screen (index 4)
+                                  if (widget.onScreenChange != null) {
+                                    widget.onScreenChange!(4);
+                                  }
+                                },
+                                child: const Text('Buat Kategori'),
+                              ),
+                            ],
+                          ),
+                        )
+                        : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount:
+                              _categories.length +
+                              1, // +1 for "No Category" option
+                          itemBuilder: (context, index) {
+                            if (index == 0) {
+                              // No Category option
+                              return ListTile(
+                                leading: const CircleAvatar(
+                                  backgroundColor: Colors.grey,
+                                  child: Icon(
+                                    Icons.not_interested,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                title: const Text('Tanpa Kategori'),
+                                subtitle: const Text(
+                                  'Produk tidak memiliki kategori',
+                                ),
+                                trailing:
+                                    _selectedCategory == null
+                                        ? const Icon(
+                                          Icons.check_circle,
+                                          color: Colors.green,
+                                        )
+                                        : null,
+                                onTap: () {
+                                  setState(() {
+                                    _selectedCategory = null;
+                                    _selectedCategoryId = null;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                              );
+                            }
+
+                            final category = _categories[index - 1];
+                            final color =
+                                category.color != null
+                                    ? Color(int.parse(category.color!))
+                                    : Theme.of(context).primaryColor;
+
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: color,
+                                child: Text(
+                                  category.name.substring(0, 1).toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              title: Text(category.name),
+                              subtitle:
+                                  category.description != null &&
+                                          category.description!.isNotEmpty
+                                      ? Text(
+                                        category.description!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                      : null,
+                              trailing:
+                                  _selectedCategoryId == category.id
+                                      ? const Icon(
+                                        Icons.check_circle,
+                                        color: Colors.green,
+                                      )
+                                      : null,
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategory = category;
+                                  _selectedCategoryId = category.id;
+                                });
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Tutup'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _saveForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -203,6 +428,7 @@ class _ProductFormScreenState extends State<ProductFormScreen>
           price: double.parse(_priceController.text),
           stock: int.parse(_stockController.text),
           imageUrl: _selectedImagePath,
+          categoryId: _selectedCategoryId,
         );
         await DatabaseHelper.instance.updateProduct(updatedProduct);
 
@@ -222,6 +448,7 @@ class _ProductFormScreenState extends State<ProductFormScreen>
           price: double.parse(_priceController.text),
           stock: int.parse(_stockController.text),
           imageUrl: _selectedImagePath,
+          categoryId: _selectedCategoryId,
         );
         await DatabaseHelper.instance.insertProduct(product);
 
@@ -370,6 +597,56 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 16),
+
+                // Category Selection
+                InkWell(
+                  onTap: _showCategorySelectionModal,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey[100],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.category, color: Colors.grey),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Kategori',
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _selectedCategory?.name ??
+                                    'Pilih Kategori (Opsional)',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color:
+                                      _selectedCategory != null
+                                          ? Colors.black
+                                          : Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
 

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/product.dart';
 import '../models/transaction.dart' as app_transaction;
 import '../models/transaction_item.dart';
+import '../models/category.dart';
 import '../providers/cached_product_provider.dart';
 
 class DatabaseHelper {
@@ -23,6 +24,10 @@ class DatabaseHelper {
   List<Product>? _allProductsCache;
   DateTime? _lastProductFetch;
 
+  // Category cache
+  List<Category>? _allCategoriesCache;
+  DateTime? _lastCategoryFetch;
+
   // Cache expiry duration
   static const cacheDuration = Duration(minutes: 15);
 
@@ -30,9 +35,11 @@ class DatabaseHelper {
   final List<Product> _memoryProducts = [];
   final List<app_transaction.Transaction> _memoryTransactions = [];
   final List<TransactionItem> _memoryTransactionItems = [];
+  final List<Category> _memoryCategories = [];
   int _productCounter = 1;
   int _transactionCounter = 1;
   int _transactionItemCounter = 1;
+  int _categoryCounter = 1;
 
   DatabaseHelper._init();
 
@@ -105,6 +112,16 @@ class DatabaseHelper {
     const integerType = 'INTEGER NOT NULL';
     const textNullable = 'TEXT';
 
+    // Create categories table
+    await db.execute('''
+    CREATE TABLE categories (
+      id $idType,
+      name $textType,
+      description $textNullable,
+      color $textNullable
+    )
+    ''');
+
     // Create products table
     await db.execute('''
     CREATE TABLE products (
@@ -112,7 +129,9 @@ class DatabaseHelper {
       name $textType,
       price $realType,
       stock $integerType,
-      image_url $textNullable
+      image_url $textNullable,
+      category_id INTEGER,
+      FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
     )
     ''');
 
@@ -147,6 +166,24 @@ class DatabaseHelper {
       // Add payment_method column to transactions table for version 2
       await db.execute(
         'ALTER TABLE transactions ADD COLUMN payment_method TEXT DEFAULT "Tunai"',
+      );
+    }
+
+    if (oldVersion < 3) {
+      // Add categories table
+      await db.execute('''
+      CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        color TEXT
+      )
+      ''');
+
+      // Add category_id to products table
+      await db.execute('ALTER TABLE products ADD COLUMN category_id INTEGER');
+      await db.execute(
+        'ALTER TABLE products ADD FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL',
       );
     }
   }
@@ -571,5 +608,151 @@ class DatabaseHelper {
       final db = await instance.database;
       db.close();
     }
+  }
+
+  // CRUD operations for Categories
+  Future<int> insertCategory(Category category) async {
+    if (isWebMode) {
+      final newCategory = Category(
+        id: _categoryCounter++,
+        name: category.name,
+        description: category.description,
+        color: category.color,
+      );
+      _memoryCategories.add(newCategory);
+
+      if (_allCategoriesCache != null) {
+        _allCategoriesCache!.add(newCategory);
+      }
+
+      return newCategory.id!;
+    }
+
+    final db = await instance.database;
+    final categoryId = await db.insert('categories', category.toMap());
+
+    // Update cache
+    final newCategory = category.copyWith(id: categoryId);
+    if (_allCategoriesCache != null) {
+      _allCategoriesCache!.add(newCategory);
+    }
+
+    return categoryId;
+  }
+
+  Future<Category?> getCategory(int id) async {
+    if (isWebMode) {
+      return _memoryCategories.firstWhere(
+        (cat) => cat.id == id,
+        orElse: () => Category(name: 'Not Found', id: -1),
+      );
+    }
+
+    final db = await instance.database;
+    final maps = await db.query('categories', where: 'id = ?', whereArgs: [id]);
+
+    if (maps.isNotEmpty) {
+      return Category.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<List<Category>> getAllCategories() async {
+    if (_allCategoriesCache != null && _isCategoryCacheValid()) {
+      return _allCategoriesCache!;
+    }
+
+    if (isWebMode) {
+      _allCategoriesCache = List.from(_memoryCategories);
+      _lastCategoryFetch = DateTime.now();
+      return _allCategoriesCache!;
+    }
+
+    final db = await instance.database;
+    final result = await db.query('categories', orderBy: 'name');
+
+    _allCategoriesCache = result.map((map) => Category.fromMap(map)).toList();
+    _lastCategoryFetch = DateTime.now();
+    return _allCategoriesCache!;
+  }
+
+  bool _isCategoryCacheValid() {
+    if (_lastCategoryFetch == null) return false;
+    return DateTime.now().difference(_lastCategoryFetch!) < cacheDuration;
+  }
+
+  Future<int> updateCategory(Category category) async {
+    if (isWebMode) {
+      final index = _memoryCategories.indexWhere((c) => c.id == category.id);
+      if (index >= 0) {
+        _memoryCategories[index] = category;
+
+        if (_allCategoriesCache != null) {
+          final cacheIndex = _allCategoriesCache!.indexWhere(
+            (c) => c.id == category.id,
+          );
+          if (cacheIndex >= 0) {
+            _allCategoriesCache![cacheIndex] = category;
+          }
+        }
+
+        return 1;
+      }
+      return 0;
+    }
+
+    final db = await instance.database;
+    final result = await db.update(
+      'categories',
+      category.toMap(),
+      where: 'id = ?',
+      whereArgs: [category.id],
+    );
+
+    // Update cache if needed
+    if (result > 0 && _allCategoriesCache != null) {
+      final index = _allCategoriesCache!.indexWhere((c) => c.id == category.id);
+      if (index >= 0) {
+        _allCategoriesCache![index] = category;
+      }
+    }
+
+    return result;
+  }
+
+  Future<int> deleteCategory(int id) async {
+    if (isWebMode) {
+      final removedCount = _memoryCategories.where((c) => c.id == id).length;
+      _memoryCategories.removeWhere((c) => c.id == id);
+
+      if (_allCategoriesCache != null) {
+        _allCategoriesCache!.removeWhere((c) => c.id == id);
+      }
+
+      return removedCount;
+    }
+
+    final db = await instance.database;
+
+    // Update products with this category to no category
+    await db.update(
+      'products',
+      {'category_id': null},
+      where: 'category_id = ?',
+      whereArgs: [id],
+    );
+
+    final result = await db.delete(
+      'categories',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    // Update cache if needed
+    if (result > 0 && _allCategoriesCache != null) {
+      _allCategoriesCache!.removeWhere((c) => c.id == id);
+    }
+
+    return result;
   }
 }
