@@ -257,23 +257,6 @@ class _ProductFormScreenState extends State<ProductFormScreen>
     print("Building ProductFormScreen with viewMode: $_viewMode");
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_viewMode == 0 ? 'Tambah Barang' : 'Daftar Produk'),
-        actions: [
-          IconButton(
-            icon: Icon(_viewMode == 0 ? Icons.list : Icons.add),
-            onPressed: () {
-              setState(() {
-                _viewMode = _viewMode == 0 ? 1 : 0;
-                // Reset form when switching to add mode
-                if (_viewMode == 0 && _isEditing == false) {
-                  _resetForm();
-                }
-              });
-            },
-          ),
-        ],
-      ),
       body: SafeArea(
         child:
             _isLoading

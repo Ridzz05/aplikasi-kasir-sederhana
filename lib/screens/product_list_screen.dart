@@ -271,17 +271,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final cartProvider = Provider.of<CartProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daftar Barang'),
-        actions: [
-          // Debug button
-          IconButton(
-            icon: const Icon(Icons.add_circle),
-            tooltip: 'Tambah Produk Contoh',
-            onPressed: _addSampleProduct,
-          ),
-        ],
-      ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
