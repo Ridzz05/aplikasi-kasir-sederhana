@@ -81,7 +81,12 @@ class DatabaseHelper {
     if (_database == null) {
       // Buat database dummy hanya agar kode tidak error
       String path = webDatabasePath;
-      _database = await openDatabase(path, version: 2, onCreate: _createDB);
+      _database = await openDatabase(
+        path,
+        version: 4,
+        onCreate: _createDB,
+        onUpgrade: _onUpgrade,
+      );
     }
   }
 
@@ -89,7 +94,7 @@ class DatabaseHelper {
     if (isWebMode) {
       return await openDatabase(
         webDatabasePath,
-        version: 2,
+        version: 4,
         onCreate: _createDB,
         onUpgrade: _onUpgrade,
       );
@@ -99,7 +104,7 @@ class DatabaseHelper {
     String path = join(documentsDirectory.path, filePath);
     return await openDatabase(
       path,
-      version: 2,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -111,6 +116,7 @@ class DatabaseHelper {
     const realType = 'REAL NOT NULL';
     const integerType = 'INTEGER NOT NULL';
     const textNullable = 'TEXT';
+    const realNullable = 'REAL';
 
     // Create categories table
     await db.execute('''
@@ -128,9 +134,13 @@ class DatabaseHelper {
       id $idType,
       name $textType,
       price $realType,
+      cost_price $realNullable,
       stock $integerType,
       image_url $textNullable,
       category_id INTEGER,
+      sku $textNullable,
+      description $textNullable,
+      barcode $textNullable,
       FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
     )
     ''');
@@ -185,6 +195,18 @@ class DatabaseHelper {
       await db.execute(
         'ALTER TABLE products ADD FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL',
       );
+    }
+
+    if (oldVersion < 4) {
+      // Add new product fields
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN cost_price REAL');
+        await db.execute('ALTER TABLE products ADD COLUMN sku TEXT');
+        await db.execute('ALTER TABLE products ADD COLUMN description TEXT');
+        await db.execute('ALTER TABLE products ADD COLUMN barcode TEXT');
+      } catch (e) {
+        print("Error upgrading database to version 4: $e");
+      }
     }
   }
 

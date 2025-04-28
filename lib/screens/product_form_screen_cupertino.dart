@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Divider;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
@@ -30,7 +31,11 @@ class _ProductFormScreenCupertinoState
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
+  final _costPriceController = TextEditingController(); // Harga modal
   final _stockController = TextEditingController();
+  final _skuController = TextEditingController(); // SKU/Kode Produk
+  final _descriptionController = TextEditingController(); // Deskripsi produk
+  final _barcodeController = TextEditingController(); // Barcode
   int? _selectedCategoryId;
   bool _isLoading = false;
   String? _imagePath;
@@ -68,13 +73,35 @@ class _ProductFormScreenCupertinoState
 
     if (widget.product != null) {
       _nameController.text = widget.product!.name;
+
       // Format harga dengan currency formatter
       _priceController.text = _currencyFormatter
           .format(widget.product!.price)
           .replaceAll('Rp ', '');
+
+      // Format harga modal jika ada
+      if (widget.product!.costPrice != null) {
+        _costPriceController.text = _currencyFormatter
+            .format(widget.product!.costPrice!)
+            .replaceAll('Rp ', '');
+      }
+
       _stockController.text = widget.product!.stock.toString();
       _selectedCategoryId = widget.product!.categoryId;
       _imagePath = widget.product!.imageUrl;
+
+      // Isi field baru
+      if (widget.product!.sku != null) {
+        _skuController.text = widget.product!.sku!;
+      }
+
+      if (widget.product!.description != null) {
+        _descriptionController.text = widget.product!.description!;
+      }
+
+      if (widget.product!.barcode != null) {
+        _barcodeController.text = widget.product!.barcode!;
+      }
 
       // Load image jika ada
       if (_imagePath != null && _imagePath!.isNotEmpty) {
@@ -84,8 +111,8 @@ class _ProductFormScreenCupertinoState
   }
 
   // Method untuk memformat input harga
-  void _formatPrice() {
-    final text = _priceController.text;
+  void _formatPrice(TextEditingController controller) {
+    final text = controller.text;
     if (text.isEmpty) return;
 
     final cleanText = text.replaceAll('.', '').replaceAll(',', '');
@@ -96,7 +123,7 @@ class _ProductFormScreenCupertinoState
 
     final formatted = NumberFormat.decimalPattern('id').format(number);
 
-    _priceController.value = TextEditingValue(
+    controller.value = TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
     );
@@ -195,7 +222,11 @@ class _ProductFormScreenCupertinoState
   void dispose() {
     _nameController.dispose();
     _priceController.dispose();
+    _costPriceController.dispose();
     _stockController.dispose();
+    _skuController.dispose();
+    _descriptionController.dispose();
+    _barcodeController.dispose();
     super.dispose();
   }
 
@@ -230,19 +261,41 @@ class _ProductFormScreenCupertinoState
     });
 
     try {
-      // Parse harga dari string terformat ke integer
+      // Parse harga dari string terformat ke double
       final priceText = _priceController.text.replaceAll('.', '');
       final price = double.tryParse(priceText) ?? 0.0;
 
+      // Parse harga modal jika ada
+      double? costPrice;
+      if (_costPriceController.text.isNotEmpty) {
+        final costPriceText = _costPriceController.text.replaceAll('.', '');
+        costPrice = double.tryParse(costPriceText);
+      }
+
+      // Membuat objek produk dengan data yang diinput
       final product = Product(
         id: widget.product?.id,
         name: _nameController.text.trim(),
         price: price,
+        costPrice: costPrice,
         stock: int.tryParse(_stockController.text) ?? 0,
         categoryId: _selectedCategoryId!,
         imageUrl: _imagePath,
+        sku:
+            _skuController.text.trim().isEmpty
+                ? null
+                : _skuController.text.trim(),
+        description:
+            _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
+        barcode:
+            _barcodeController.text.trim().isEmpty
+                ? null
+                : _barcodeController.text.trim(),
       );
 
+      // Menyimpan produk
       final cachedProductProvider = Provider.of<CachedProductProvider>(
         context,
         listen: false,
@@ -365,7 +418,11 @@ class _ProductFormScreenCupertinoState
     // Reset semua controller
     _nameController.clear();
     _priceController.clear();
+    _costPriceController.clear();
     _stockController.clear();
+    _skuController.clear();
+    _descriptionController.clear();
+    _barcodeController.clear();
 
     // Reset kategori yang dipilih
     final categoryProvider = Provider.of<CategoryProvider>(
@@ -400,7 +457,13 @@ class _ProductFormScreenCupertinoState
         middle: Text(widget.product == null ? 'Tambah Produk' : 'Edit Produk'),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
-          child: const Icon(CupertinoIcons.check_mark),
+          child: const Text(
+            'Simpan',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF64B5F6),
+            ),
+          ),
           onPressed: _saveForm,
         ),
       ),
@@ -420,7 +483,7 @@ class _ProductFormScreenCupertinoState
                           height: 200,
                           decoration: BoxDecoration(
                             color: CupertinoColors.systemGrey6,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: CupertinoColors.systemGrey4,
                             ),
@@ -431,7 +494,7 @@ class _ProductFormScreenCupertinoState
                                     fit: StackFit.expand,
                                     children: [
                                       ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(12),
                                         child: Image.file(
                                           _imageFile!,
                                           fit: BoxFit.cover,
@@ -482,8 +545,14 @@ class _ProductFormScreenCupertinoState
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Nama Produk'),
-                      const SizedBox(height: 8),
+
+                      // Section: Informasi Dasar Produk
+                      _buildSectionHeader('Informasi Dasar'),
+                      const SizedBox(height: 12),
+
+                      // Nama Produk
+                      _buildFieldLabel('Nama Produk *'),
+                      const SizedBox(height: 4),
                       CupertinoTextField(
                         controller: _nameController,
                         placeholder: 'Masukkan nama produk',
@@ -497,35 +566,13 @@ class _ProductFormScreenCupertinoState
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Harga'),
-                      const SizedBox(height: 8),
+
+                      // SKU / Kode Produk
+                      _buildFieldLabel('Kode Produk (SKU)'),
+                      const SizedBox(height: 4),
                       CupertinoTextField(
-                        controller: _priceController,
-                        placeholder: 'Masukkan harga',
-                        keyboardType: TextInputType.number,
-                        padding: const EdgeInsets.all(12),
-                        prefix: const Padding(
-                          padding: EdgeInsets.only(left: 12),
-                          child: Text('Rp'),
-                        ),
-                        onChanged: (value) {
-                          _formatPrice();
-                        },
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.white,
-                          border: Border.all(
-                            color: CupertinoColors.systemGrey4,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('Stok'),
-                      const SizedBox(height: 8),
-                      CupertinoTextField(
-                        controller: _stockController,
-                        placeholder: 'Masukkan jumlah stok',
-                        keyboardType: TextInputType.number,
+                        controller: _skuController,
+                        placeholder: 'Masukkan kode produk (opsional)',
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: CupertinoColors.white,
@@ -536,8 +583,41 @@ class _ProductFormScreenCupertinoState
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Kategori'),
-                      const SizedBox(height: 8),
+
+                      // Barcode
+                      _buildFieldLabel('Barcode'),
+                      const SizedBox(height: 4),
+                      CupertinoTextField(
+                        controller: _barcodeController,
+                        placeholder: 'Masukkan barcode (opsional)',
+                        keyboardType: TextInputType.number,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.white,
+                          border: Border.all(
+                            color: CupertinoColors.systemGrey4,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        suffix: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            child: const Icon(
+                              CupertinoIcons.barcode_viewfinder,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              // Implementasi scan barcode di masa depan
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Kategori
+                      _buildFieldLabel('Kategori *'),
+                      const SizedBox(height: 4),
                       Consumer<CategoryProvider>(
                         builder: (context, categoryProvider, child) {
                           final categories = categoryProvider.categories;
@@ -637,9 +717,148 @@ class _ProductFormScreenCupertinoState
                           );
                         },
                       ),
+                      const SizedBox(height: 16),
+
+                      // Deskripsi
+                      _buildFieldLabel('Deskripsi Produk'),
+                      const SizedBox(height: 4),
+                      CupertinoTextField(
+                        controller: _descriptionController,
+                        placeholder: 'Masukkan deskripsi produk (opsional)',
+                        padding: const EdgeInsets.all(12),
+                        maxLines: 3,
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.white,
+                          border: Border.all(
+                            color: CupertinoColors.systemGrey4,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Section: Harga & Stok
+                      _buildSectionHeader('Harga & Stok'),
+                      const SizedBox(height: 12),
+
+                      // Harga Modal
+                      _buildFieldLabel('Harga Modal'),
+                      const SizedBox(height: 4),
+                      CupertinoTextField(
+                        controller: _costPriceController,
+                        placeholder: 'Masukkan harga modal',
+                        keyboardType: TextInputType.number,
+                        padding: const EdgeInsets.all(12),
+                        prefix: const Padding(
+                          padding: EdgeInsets.only(left: 12),
+                          child: Text('Rp'),
+                        ),
+                        onChanged: (value) {
+                          _formatPrice(_costPriceController);
+                        },
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.white,
+                          border: Border.all(
+                            color: CupertinoColors.systemGrey4,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Harga Jual
+                      _buildFieldLabel('Harga Jual *'),
+                      const SizedBox(height: 4),
+                      CupertinoTextField(
+                        controller: _priceController,
+                        placeholder: 'Masukkan harga jual',
+                        keyboardType: TextInputType.number,
+                        padding: const EdgeInsets.all(12),
+                        prefix: const Padding(
+                          padding: EdgeInsets.only(left: 12),
+                          child: Text('Rp'),
+                        ),
+                        onChanged: (value) {
+                          _formatPrice(_priceController);
+                        },
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.white,
+                          border: Border.all(
+                            color: CupertinoColors.systemGrey4,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Stok
+                      _buildFieldLabel('Stok *'),
+                      const SizedBox(height: 4),
+                      CupertinoTextField(
+                        controller: _stockController,
+                        placeholder: 'Masukkan jumlah stok',
+                        keyboardType: TextInputType.number,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.white,
+                          border: Border.all(
+                            color: CupertinoColors.systemGrey4,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Tombol Simpan
+                      CupertinoButton(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        color: const Color(0xFF64B5F6),
+                        borderRadius: BorderRadius.circular(8),
+                        onPressed: _saveForm,
+                        child: const Text(
+                          'Simpan Produk',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 30),
                     ],
                   ),
                 ),
+      ),
+    );
+  }
+
+  // Helper method untuk membuat header section
+  Widget _buildSectionHeader(String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF64B5F6),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper method untuk membuat label field
+  Widget _buildFieldLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: CupertinoColors.systemGrey,
       ),
     );
   }

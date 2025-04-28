@@ -93,6 +93,9 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
               ),
             ),
 
+            // Quick Menu
+            _buildQuickMenu(),
+
             // Category filter
             SizedBox(
               height: 44,
@@ -145,6 +148,132 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
                       : _buildProductGrid(context),
             ),
             _buildCartSection(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget untuk quick menu
+  Widget _buildQuickMenu() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: CupertinoColors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: CupertinoColors.systemGrey.withOpacity(0.1),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildQuickMenuItem(
+            icon: CupertinoIcons.cart_badge_plus,
+            label: 'Tambah',
+            color: CupertinoColors.activeBlue,
+            onTap: () {
+              if (widget.onScreenChange != null) {
+                widget.onScreenChange!(1); // Ganti ke tab produk
+              }
+            },
+          ),
+          _buildQuickMenuItem(
+            icon: CupertinoIcons.barcode_viewfinder,
+            label: 'Scan',
+            color: CupertinoColors.activeGreen,
+            onTap: () {
+              // Placeholder untuk fungsi scan barcode
+              showCupertinoDialog(
+                context: context,
+                builder:
+                    (ctx) => CupertinoAlertDialog(
+                      title: const Text('Scan Barcode'),
+                      content: const Text(
+                        'Fitur scan barcode akan segera hadir',
+                      ),
+                      actions: [
+                        CupertinoDialogAction(
+                          child: const Text('OK'),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+              );
+            },
+          ),
+          _buildQuickMenuItem(
+            icon: CupertinoIcons.money_dollar_circle,
+            label: 'Transaksi',
+            color: CupertinoColors.systemIndigo,
+            onTap: () {
+              if (widget.onScreenChange != null) {
+                widget.onScreenChange!(2); // Ganti ke tab transaksi
+              }
+            },
+          ),
+          _buildQuickMenuItem(
+            icon: CupertinoIcons.star,
+            label: 'Favorit',
+            color: CupertinoColors.systemOrange,
+            onTap: () {
+              // Placeholder untuk fungsi favorit
+              showCupertinoDialog(
+                context: context,
+                builder:
+                    (ctx) => CupertinoAlertDialog(
+                      title: const Text('Produk Favorit'),
+                      content: const Text(
+                        'Fitur produk favorit akan segera hadir',
+                      ),
+                      actions: [
+                        CupertinoDialogAction(
+                          child: const Text('OK'),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickMenuItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 70,
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -239,13 +368,13 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
           slivers: [
             CupertinoSliverRefreshControl(onRefresh: _loadProducts),
             SliverPadding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.75,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
+                  crossAxisCount: 3,
+                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final product = filteredProducts[index];
@@ -265,11 +394,11 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
       child: Container(
         decoration: BoxDecoration(
           color: CupertinoColors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
               color: CupertinoColors.systemGrey.withOpacity(0.1),
-              blurRadius: 10,
+              blurRadius: 5,
               offset: const Offset(0, 2),
             ),
           ],
@@ -278,65 +407,70 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
+              flex: 3,
               child: Container(
                 decoration: BoxDecoration(
                   color: CupertinoColors.systemGrey6,
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
+                    top: Radius.circular(10),
                   ),
                 ),
                 child:
                     product.imageUrl != null && product.imageUrl!.isNotEmpty
                         ? ClipRRect(
                           borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
+                            top: Radius.circular(10),
                           ),
                           child: _buildProductImage(product.imageUrl!),
                         )
                         : Center(
                           child: Icon(
                             CupertinoIcons.cube_box,
-                            size: 40,
+                            size: 30,
                             color: CupertinoColors.systemGrey,
                           ),
                         ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    currencyFormatter.format(product.price),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: CupertinoColors.activeBlue,
-                      fontWeight: FontWeight.w500,
+                    const SizedBox(height: 2),
+                    Text(
+                      currencyFormatter.format(product.price),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: CupertinoColors.activeBlue,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Stok: ${product.stock}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color:
-                          product.stock > 0
-                              ? CupertinoColors.systemGrey
-                              : CupertinoColors.destructiveRed,
+                    const SizedBox(height: 2),
+                    Text(
+                      'Stok: ${product.stock}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color:
+                            product.stock > 0
+                                ? CupertinoColors.systemGrey
+                                : CupertinoColors.destructiveRed,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
