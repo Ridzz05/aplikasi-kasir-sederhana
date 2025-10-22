@@ -73,31 +73,33 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _initializeProviders() async {
-    // Gunakan try-catch untuk menangani error saat inisialisasi
-    try {
-      final storeInfoProvider = Provider.of<StoreInfoProvider>(
-        context,
-        listen: false,
-      );
+    // Tunggu hingga context tersedia sebelum mengakses Provider
+    Future.delayed(Duration.zero, () async {
+      try {
+        final storeInfoProvider = Provider.of<StoreInfoProvider>(
+          context,
+          listen: false,
+        );
 
-      final categoryProvider = Provider.of<CategoryProvider>(
-        context,
-        listen: false,
-      );
+        final categoryProvider = Provider.of<CategoryProvider>(
+          context,
+          listen: false,
+        );
 
-      final productProvider = Provider.of<CachedProductProvider>(
-        context,
-        listen: false,
-      );
+        final productProvider = Provider.of<CachedProductProvider>(
+          context,
+          listen: false,
+        );
 
-      // Load data secara asynchronous
-      await storeInfoProvider.initializeStoreInfo();
-      await categoryProvider.loadCategories();
-      await productProvider.loadAllProducts();
-    } catch (e) {
-      print('Error initializing providers: $e');
-      // Jangan throw error, biarkan aplikasi tetap berjalan
-    }
+        // Load data secara asynchronous
+        await storeInfoProvider.initializeStoreInfo();
+        await categoryProvider.loadCategories();
+        await productProvider.loadAllProducts();
+      } catch (e) {
+        print('Error initializing providers: $e');
+        // Jangan throw error, biarkan aplikasi tetap berjalan
+      }
+    });
   }
 
   void _initializeScreens() {
