@@ -59,7 +59,7 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
       );
       await categoryProvider.loadCategories();
     } catch (e) {
-      print('Error loading products: $e');
+      // Handle error silently
     } finally {
       setState(() => _isLoading = false);
     }
@@ -487,7 +487,6 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
         width: double.infinity,
         height: double.infinity,
         errorBuilder: (context, error, stackTrace) {
-          print('Error loading image: $error');
           return Center(
             child: Icon(
               CupertinoIcons.photo,
@@ -498,7 +497,6 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
         },
       );
     } catch (e) {
-      print('Error loading image: $e');
       return Center(
         child: Icon(
           CupertinoIcons.photo,
@@ -859,7 +857,6 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
                       }
                     }
                   } catch (e) {
-                    print('Error saat menambah item: $e');
                     if (context.mounted) {
                       _showErrorDialog('Gagal menambah item: $e', context);
                     }
@@ -1744,7 +1741,6 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
         );
       }
     } catch (e) {
-      print('Error saat menyimpan transaksi: $e');
       if (mounted) {
         _showErrorDialog('Gagal menyimpan transaksi: $e');
       }

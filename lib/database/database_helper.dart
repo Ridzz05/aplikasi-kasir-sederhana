@@ -59,18 +59,14 @@ class DatabaseHelper {
     } catch (e) {
       // Jika terjadi error saat upgrade database (misal: kolom tidak bisa ditambahkan)
       // Maka hapus database lama dan buat yang baru
-      print("Error upgrading database: $e");
-
       try {
         Directory documentsDirectory = await getApplicationDocumentsDirectory();
         String path = join(documentsDirectory.path, 'aplikasir.db');
         await deleteDatabase(path);
-        print("Old database deleted, creating new one");
 
         _database = await _initDB('aplikasir.db');
         return _database!;
       } catch (deleteError) {
-        print("Error creating new database after deletion: $deleteError");
         rethrow;
       }
     }
@@ -205,7 +201,7 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE products ADD COLUMN description TEXT');
         await db.execute('ALTER TABLE products ADD COLUMN barcode TEXT');
       } catch (e) {
-        print("Error upgrading database to version 4: $e");
+        // Handle upgrade error silently
       }
     }
   }
@@ -617,7 +613,6 @@ class DatabaseHelper {
 
       return true;
     } catch (e) {
-      print("Error resetting database: $e");
       return false;
     }
   }

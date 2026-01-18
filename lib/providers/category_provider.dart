@@ -29,11 +29,11 @@ class CategoryProvider extends ChangeNotifier {
         try {
           await DatabaseHelper.instance.insertCategory(defaultCategory);
         } catch (e) {
-          print('Error adding default category: $e');
+          // Handle error silently
         }
       }
     } catch (e) {
-      print('Error loading categories: $e');
+      // Handle error silently
       // Gunakan kategori default jika terjadi error
       _categories = [Category(id: 0, name: 'Tidak terkategori')];
     } finally {
@@ -53,7 +53,6 @@ class CategoryProvider extends ChangeNotifier {
       await loadCategories(); // Reload the categories
       return id > 0;
     } catch (e) {
-      print('Error adding category: $e');
       _isLoading = false;
       notifyListeners();
       return false;
@@ -69,7 +68,6 @@ class CategoryProvider extends ChangeNotifier {
       await loadCategories(); // Reload the categories
       return result > 0;
     } catch (e) {
-      print('Error updating category: $e');
       _isLoading = false;
       notifyListeners();
       return false;
@@ -85,7 +83,6 @@ class CategoryProvider extends ChangeNotifier {
       await loadCategories(); // Reload the categories
       return result > 0;
     } catch (e) {
-      print('Error deleting category: $e');
       _isLoading = false;
       notifyListeners();
       return false;

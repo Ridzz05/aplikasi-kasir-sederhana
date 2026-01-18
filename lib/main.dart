@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage> {
         await categoryProvider.loadCategories();
         await productProvider.loadAllProducts();
       } catch (e) {
-        print('Error initializing providers: $e');
+        // Handle initialization error silently
         // Jangan throw error, biarkan aplikasi tetap berjalan
       }
     });

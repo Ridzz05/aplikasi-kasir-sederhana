@@ -199,13 +199,11 @@ class _ProductFormScreenCupertinoState
             _imagePath = savedImage.path;
           });
         } catch (e) {
-          print('Error menyimpan gambar: $e');
           _showErrorDialog('Gagal menyimpan gambar: $e');
         }
       }
     } catch (e) {
       if (!mounted) return;
-      print('Error dalam mengambil gambar: $e');
       _showErrorDialog('Gagal mengambil gambar: $e');
     }
   }

@@ -84,7 +84,6 @@ class ImageHelper {
       // Salin ke direktori aplikasi
       return await _saveImageToAppDirectory(tempFile);
     } catch (e) {
-      debugPrint('Error compressing image: $e');
       return null;
     }
   }
@@ -107,7 +106,6 @@ class ImageHelper {
       
       return newImage.path;
     } catch (e) {
-      debugPrint('Error saving image: $e');
       return null;
     }
   }
@@ -121,7 +119,7 @@ class ImageHelper {
         await file.delete();
       }
     } catch (e) {
-      debugPrint('Error deleting image: $e');
+      // Handle error silently
     }
   }
 } 

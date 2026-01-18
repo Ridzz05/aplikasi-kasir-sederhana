@@ -25,7 +25,6 @@ class StoreInfoProvider with ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      print('Error initializing store info: $e');
       // In case of error, use default info
       _storeInfo = StoreInfo.defaultInfo();
       notifyListeners();
@@ -62,7 +61,7 @@ class StoreInfoProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefKey, storeInfo.toJson());
     } catch (e) {
-      print('Error saving store info: $e');
+      // Handle error silently
     }
   }
 
