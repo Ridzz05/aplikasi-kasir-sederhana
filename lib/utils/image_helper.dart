@@ -33,7 +33,6 @@ class ImageHelper {
       // Jika ukuran file melebihi batas maksimal atau perlu dikompresi, lakukan kompresi
       return await _compressAndSaveImage(imageFile);
     } catch (e) {
-      debugPrint('Error picking image: $e');
       return null;
     }
   }

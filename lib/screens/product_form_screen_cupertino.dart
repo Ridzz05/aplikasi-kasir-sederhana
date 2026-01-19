@@ -122,6 +122,7 @@ class _ProductFormScreenCupertinoState
     if (number == null) return;
 
     final formatted = NumberFormat.decimalPattern('id').format(number);
+    if (formatted == text) return;
 
     controller.value = TextEditingValue(
       text: formatted,
@@ -496,6 +497,8 @@ class _ProductFormScreenCupertinoState
                                         child: Image.file(
                                           _imageFile!,
                                           fit: BoxFit.cover,
+                                          cacheWidth: 600,
+                                          cacheHeight: 600,
                                         ),
                                       ),
                                       Positioned(
@@ -658,25 +661,12 @@ class _ProductFormScreenCupertinoState
                             );
                           }
 
-                          // Gunakan kategori default jika _selectedCategoryId tidak ditemukan
-                          Category selectedCategory =
-                              categoryProvider.defaultCategory;
+                          Category? selectedCategory;
                           if (_selectedCategoryId != null) {
-                            // Temukan kategori yang dipilih
-                            final categoryFound = categories.firstWhere(
+                            selectedCategory = categories.firstWhere(
                               (c) => c.id == _selectedCategoryId,
                               orElse: () => categoryProvider.defaultCategory,
                             );
-                            selectedCategory = categoryFound;
-                          } else if (categories.isNotEmpty) {
-                            // Jika tidak ada kategori yang dipilih, pilih yang pertama
-                            selectedCategory = categories.first;
-                            // Pastikan _selectedCategoryId terisi
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              setState(() {
-                                _selectedCategoryId = selectedCategory.id;
-                              });
-                            });
                           }
 
                           return Container(
@@ -697,7 +687,8 @@ class _ProductFormScreenCupertinoState
                                   Text(
                                     _selectedCategoryId == null
                                         ? 'Pilih kategori'
-                                        : selectedCategory.name,
+                                        : selectedCategory?.name ??
+                                            'Pilih kategori',
                                     style: TextStyle(
                                       color:
                                           _selectedCategoryId == null

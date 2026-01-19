@@ -179,7 +179,7 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
             color: CupertinoColors.activeBlue,
             onTap: () {
               if (widget.onScreenChange != null) {
-                widget.onScreenChange!(1); // Ganti ke tab produk
+                widget.onScreenChange!(2); // Ganti ke tab tambah produk
               }
             },
           ),
@@ -213,7 +213,7 @@ class _POSScreenCupertinoState extends State<POSScreenCupertino> {
             color: CupertinoColors.systemIndigo,
             onTap: () {
               if (widget.onScreenChange != null) {
-                widget.onScreenChange!(2); // Ganti ke tab transaksi
+                widget.onScreenChange!(1); // Ganti ke tab riwayat transaksi
               }
             },
           ),

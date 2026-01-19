@@ -12,8 +12,6 @@ void showCustomNotification({
 }) {
   final overlay = Overlay.of(context);
 
-  // Tampilkan hanya satu notifikasi dalam satu waktu
-  // Perlu variabel statis untuk melacak notifikasi yang aktif
   if (_NotificationManager.isShowing) {
     // Hapus notifikasi sebelumnya
     _NotificationManager.hideCurrentNotification();
